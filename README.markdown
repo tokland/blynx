@@ -7,7 +7,7 @@ State: _in development_
 # Features
 
 * Functional (mostly, impure side effects allowed).
-* Basic built-in types: integer, float, string, tuple, array, record, hash.
+* Basic built-in types: integer, float, string, tuple, array, dictionary.
 * Statically typed.
 * Polymorphic types.
 * Algebraic data types.
@@ -16,4 +16,8 @@ State: _in development_
 * Pattern-matching.
 * Eager/strict evaluation.
 * Whitespace-relevant syntax.
-* Syntactic sugar for asynchronous calls.
+
+# More
+
+* Overview: https://github.com/tokland/blynx/wiki/Overview
+* Example: https://github.com/tokland/blynx/blob/master/examples/validate-publications.coffee
