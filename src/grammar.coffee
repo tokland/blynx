@@ -1,5 +1,5 @@
 jison = require 'jison'
-{createGrammarItem: o} = require './lib'
+{createGrammarItem: o, recursiveGrammarItem: r} = require './lib'
 
 grammar =
   Root: [
@@ -7,7 +7,6 @@ grammar =
     ["Body EOF", "return new yy.Root($1);"]
   ]
 
-  # Body: r "Line", min: 1
   Body: [
     o "Line", -> [$1]
     o "Body Line", -> $1.concat($2)
@@ -24,25 +23,25 @@ grammar =
   ]
     
   Statement: [
-    o 'Binding'
+    o 'SymbolBinding'
+    o 'FunctionBinding'
   ]
 
-  Binding: [
+  SymbolBinding: [
     o 'ID = BlockOrExpression', -> new Binding($1, $3)
+  ]
+  
+  FunctionBinding: [
     o 'ID ( ArgumentDefinitionList ) : Type = BlockOrExpression', -> new Function($1, $3, $6, $8)
   ]
+
+  ArgumentDefinitionList: r("ArgumentDefinition", join: ',', min: 0)
 
   BlockOrExpression: [
     o "Block"
     o "Expression"
   ]
  
-  ArgumentDefinitionList: [
-    o "", -> []
-    o "ArgumentDefinition", -> [$1]
-    o "ArgumentDefinitionList , ArgumentDefinition", -> $1.concat($3)
-  ]
-
   ArgumentDefinition: [
     o "ID : Type", -> new ArgumentDefinition($1, $3)
   ]

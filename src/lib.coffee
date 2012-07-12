@@ -32,7 +32,7 @@ exports.zipEqType = (array1, array2) ->
 
 unwrap = /^function\s*\(\)\s*\{\s*return\s*([\s\S]*);\s*\}/
 
-exports.createGrammarItem = (patternString, action, options) ->
+exports.createGrammarItem = o = (patternString, action, options) ->
   patternString = patternString.replace /\s{2,}/g, ' '
   if action
     action = if match = unwrap.exec action then match[1] else "(#{action}())"
@@ -41,7 +41,17 @@ exports.createGrammarItem = (patternString, action, options) ->
     [patternString, "$$ = #{action};", options]
   else
     [patternString, '$$ = $1;', options]
- 
+
+exports.recursiveGrammarItem = (rule, options) ->
+  _(options).defaults(min: 1, join: null)
+  join = options.join
+  _.compact([
+    (o("", -> []) if options.min == 0)
+    o(rule, -> [$1])
+    if join then o("#{rule}List #{join} #{rule}", -> $1.concat($3)) else 
+                  o("#{rule}List #{rule}", -> $1.concat($2))
+  ])
+
 # Nodes
 
 exports.getTypes = (values, env) ->
