@@ -3,10 +3,12 @@ _ = require './underscore_extensions'
 {debug, error} = require './lib'
 
 # Escape special characters of regular expression in string: 'ab*' -> 'ab\\*'
-escapeRegExp = (s) -> s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&")
+escapeRegExp = (s) -> 
+  s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&")
 
-# Split string and build a ORed regular expression: 'if then' -> /if|then/
-b = (s) -> new RegExp(_(s.split(" ")).map((c) -> escapeRegExp(c)).join("|"))
+# Split string and build a OR-ed regular expression with it: 'if then' -> /if|then/
+b = (s) -> 
+  new RegExp(_(s.split(" ")).map((c) -> escapeRegExp(c)).join("|"))
 
 # {tokenName: RegExp}
 tokensDefinition = 
@@ -99,7 +101,7 @@ filterTokens = (tokens) ->
   tokens_out
   
 # Return array of tokens from source code
-exports.tokenize = tokenize = (source) ->
+exports.tokenize = (source) ->
   parseState = {source: source, lineNumber: 1}
   tokens = while parseState.source
     [token, parseState] = getToken(parseState)

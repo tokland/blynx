@@ -28,7 +28,7 @@ grammar =
   ]
 
   SymbolBinding: [
-    o 'ID = BlockOrExpression', -> new Binding($1, $3)
+    o 'ID = BlockOrExpression', -> new SymbolBinding($1, $3)
   ]
   
   FunctionBinding: [

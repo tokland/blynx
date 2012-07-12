@@ -11,7 +11,7 @@ class Root
     
 # Statements
 
-class Binding
+class SymbolBinding
   constructor: (@id_token, @block) ->
   process: (env) -> 
     type = @block.process(env).type
@@ -26,6 +26,8 @@ class Binding
         }).call(this);
       """
 
+# Expressions
+
 class Expression
   constructor: (@value) ->
   process: (env) -> @value.process(env)
@@ -36,11 +38,11 @@ class Symbol
   constructor: (@id_token) ->
   process: (env) ->
     if not env.bindings[@id_token]
-      error("NameError", "undefined Symbol '#{@id_token}'")
+      error("NameError", "undefined symbol '#{@id_token}'")
     {env, type: env.bindings[@id_token]}
   compile: (env) -> @id_token
 
-# Standard values
+# Literals
   
 class Int
   constructor: (@value_token) ->
@@ -57,9 +59,10 @@ class String
   process: (env) -> {env, type: new env.types.String}
   compile: (env) -> JSON.stringify(@value)
 
-exports.FunctionCallFromID = (name, args) ->
-  new FunctionCall(new Symbol(name), args)
- 
 lib.exportClasses(exports, [
-  Root, Expression, Symbol, Binding, Int, Float, String
+  Root, 
+  SymbolBinding, 
+  Expression, 
+  Symbol, 
+  Int, Float, String
 ])

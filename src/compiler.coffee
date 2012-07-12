@@ -2,10 +2,11 @@ _ = require('./underscore_extensions')
 types = require './types'
 lexer = require('./lexer')
 nodes = require('./nodes')
+grammar = require('./grammar')
 lib = require './lib'
 {debug, error} = lib
 
-exports.getParser = (grammar, options) ->
+getParser = (options) ->
   _(grammar.parser).merge({
     yy: nodes
     lexer:
@@ -21,16 +22,16 @@ exports.getParser = (grammar, options) ->
       error("ParserError: #{msg}")
   })
 
-getAST = (parser, source, options = {}) ->
+exports.getAST = getAST = (source, options = {}) ->
+  parser = getParser(debug: options.verbose)
   tokens = lexer.tokenize(source)
   parser.parse(tokens)
 
-exports.compile = (parser, source, options = {}) ->
+exports.compile = (source, options = {}) ->
   get_basic_types = (names) -> _(names).mash((name) -> [name, types[name]])  
-  env = {
-    bindings: {}
+  env = { # create class/type
+    bindings: {} # -> call it symbols
     types: get_basic_types(["Int", "Float", "String"])
-    typevars: {}
-    current_function: undefined
+    current_function: []
   }
-  getAST(parser, source, options).compile_with_process(env)
+  getAST(source, options).compile_with_process(env).output + "\n"
