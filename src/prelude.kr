@@ -1,0 +1,31 @@
+type Bool = True | False
+
+# define only math operators for Int until typeclasses are implemented
+external (+) = (Int, Int) -> Int
+external (-) = (Int, Int) -> Int
+external (*) = (Int, Int) -> Int
+external (/) = (Int, Int) -> Int
+external (%) = (Int, Int) -> Int
+
+external (==) = (Int, Int) -> Bool
+external (<) = (Int, Int) -> Bool
+external (<=) = (Int, Int) -> Bool
+external (>) = (Int, Int) -> Bool
+external (>=) = (Int, Int) -> Bool
+
+external (||) = (Bool, Bool) -> Bool
+external (&&) = (Bool, Bool) -> Bool
+
+external Math as math = {pow: (Float, Float) -> Float}
+(**)(a: Float, b: Float): Float = math.pow(a, b)
+
+external console = {log: (a) -> ()}
+
+external api = {getAt: ([a], Int) -> a, getSlice: ([a], Int, Int) -> [a], getOpenSlice: ([a], Int, Int) -> [a]}
+
+type Maybe(a) = Nothing | Just(a)
+
+getAt(xs: [a], index: Int): a = api.getAt(xs, index)
+getSlice(xs: [a], from: Int, to: Int): [a] = api.getSlice(xs, from, to)
+getOpenSlice(xs: [a], from: Int, to: Int): [a] = api.getOpenSlice(xs, from, to)
+print = console.log
