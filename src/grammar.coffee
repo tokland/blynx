@@ -35,7 +35,8 @@ grammar =
     o 'ID ( ArgumentDefinitionList ) : Type = BlockOrExpression', -> new Function($1, $3, $6, $8)
   ]
 
-  ArgumentDefinitionList: r("ArgumentDefinition", join: ',', min: 0)
+  ArgumentDefinitionList: 
+    r("ArgumentDefinition", join: ',', min: 0)
 
   BlockOrExpression: [
     o "Block"
