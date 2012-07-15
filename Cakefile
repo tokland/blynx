@@ -19,7 +19,7 @@ task 'grammar', 'Compile language grammar', ->
   parser.generate()
   
 task 'specs', 'Run specs', ->
-  process.env["NODE_PATH"] += ":lib"
+  process.env["NODE_PATH"] += ":src"
   process.env["BLYNX_PATH"] = "spec/modules"
   run(['node_modules/jasmine-node/bin/jasmine-node', "--coffee", "spec"], process.env)
 
