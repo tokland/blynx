@@ -10,18 +10,47 @@ escapeRegExp = (s) ->
 b = (s) -> 
   new RegExp(_(s.split(" ")).map((c) -> escapeRegExp(c)).join("|"))
 
+operator_symbols = "= + - & | ^ < > ! : * / %".split(" ")
+
+isolated = (s) ->
+  s2 = _(s.split(" ")).map(escapeRegExp).join("|") 
+  new RegExp("(#{s2})(?:[^#{escapeRegExp(operator_symbols.join(""))}]|$)")
+  
+# Group symbol operators with argument as first character
+op = (c) ->  
+  new RegExp("#{escapeRegExp(c)}[#{escapeRegExp(operator_symbols.join(""))}]*")
+
+keywords = (s) ->
+  new RegExp(_(s.split(" ")).map((s2) -> "\\b#{s2}\\b").join("|"))
+  
 # {tokenName: RegExp}
 tokensDefinition = 
-  MATH_OP: b(">> << ** * / %")
-  BOOL_OP: b("|| &&")
-  UNARY_OP: b("!")
-  COMPARE_OP: b("<= == >= < >")
-  _SELF: b(["type if then else external as return",
-            "-> : = , ; - + | ( [ { } ] ) ... .. ."].join(" "))
+  _KEYWORDS: keywords("type if then else external as return match case yield")
+  
+  _SYMBOLS_GROUPERS: b("( [ { } ] )")
+  _SYMBOLS_INTERNAL1: b("-> , ; ... .. . $ @")
+  _SYMBOLS_INTERNAL2: isolated(": = |= &=")
+  _SYMBOLS_INTERNAL2: isolated("& ! |")
+
+  SYMBOL_EQUAL: op("=")  
+  SYMBOL_PLUS: op("+")
+  SYMBOL_MINUS: op("-")
+  SYMBOL_AMPERSAND: op("&")
+  SYMBOL_PIPE: op("|")
+  SYMBOL_CIRCUMFLEX: op("^")
+  SYMBOL_LESS: op("<")
+  SYMBOL_MORE: op(">")
+  SYMBOL_EXCLAMATION: op("!")
+  SYMBOL_COLON: op(":")
+  SYMBOL_MUL: op("*")
+  SYMBOL_DIV: op("/")
+  SYMBOL_PERCENT: op("%")
+  
   TERMINATOR: /()\s*\n+/
   WHITESPACE: /[ \t]+/
+  
   STRING: /"(?:[^"\\]|\\.)*"/
-  COMMENT: /#(.*)/
+  COMMENT: /(?:#)(.*)/
   ID: /[a-z_]\w*/
   ID_CAP: /[A-Z]\w*/
   FLOAT: /[0-9]+\.(?:[0-9]+)/
@@ -37,9 +66,11 @@ getToken = (parseState) ->
     complete_regexp = new RegExp("^(?:" + regexp.source + ")", flags)
     if (match = parseState.source.match(complete_regexp))
       captured = (if match[1] == undefined then match[0] else match[1])
-      name = (if token_name != "_SELF" then token_name else captured.toUpperCase())
+      name = if token_name.match(/^_/) then captured.toUpperCase() else token_name
       token = [name, captured, parseState.lineNumber]
-      [match[0], token]
+      # REFACTOR: don't consume non-capturing tailing groups 
+      consumed = if match[1] and match[0][0] == match[1][0] then match[1] else match[0]
+      [consumed, token]
     else
       false
   ) or error("LexerError", "Cannot parse: '" + parseState.source + "'")
