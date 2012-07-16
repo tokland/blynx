@@ -29,14 +29,11 @@ tokensDefinition =
   
   _SYMBOLS_GROUPERS: b("( [ { } ] )")
   _SYMBOLS_INTERNAL1: b("-> , ; ... .. . $ @")
-  _SYMBOLS_INTERNAL2: isolated(": = |= &=")
-  _SYMBOLS_INTERNAL2: isolated("& ! |")
+  _SYMBOLS_INTERNAL2: isolated(": = |= &= & ! |")
 
   SYMBOL_EQUAL: op("=")  
   SYMBOL_PLUS: op("+")
   SYMBOL_MINUS: op("-")
-  SYMBOL_AMPERSAND: op("&")
-  SYMBOL_PIPE: op("|")
   SYMBOL_CIRCUMFLEX: op("^")
   SYMBOL_LESS: op("<")
   SYMBOL_MORE: op(">")
@@ -45,6 +42,8 @@ tokensDefinition =
   SYMBOL_MUL: op("*")
   SYMBOL_DIV: op("/")
   SYMBOL_PERCENT: op("%")
+  SYMBOL_AMPERSAND: op("&")
+  SYMBOL_PIPE: op("|")
   
   TERMINATOR: /()\s*\n+/
   WHITESPACE: /[ \t]+/
