@@ -11,12 +11,15 @@ tests = [
   # Pre-defined types
 
   ["1", 1]
-  ["1.23", 1.23]
-  ['"hello there"', "hello there"]
   
-  ["()", []],
-  ["(1, 2.5)", [1, 2.5]],
-  ["(1, 2.5, 5)", [1, 2.5, 5]],
+  ["1.23", 1.23]
+  
+  ['"hello there"', "hello there"]
+  ['"hello \\"inner\\" there"', 'hello "inner" there']
+  
+  ["()", []]
+  ["(1, 2.5)", [1, 2.5]]
+  ["(1, 2.5, 5)", [1, 2.5, 5]]
   
   # Symbol bindings
   

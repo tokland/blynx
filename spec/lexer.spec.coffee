@@ -57,7 +57,7 @@ tests = [
   
   ["1 2.2 333",
     "[INTEGER 1] [FLOAT 2.2] [INTEGER 333]"]
-
+    
   ['"hello \\"there\\""',
     """[STRING "hello \\"there\\""]"""]
 
