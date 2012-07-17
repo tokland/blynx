@@ -37,7 +37,7 @@ exports.createGrammarItem = o = (patternString, action, options) ->
   if action
     match = unwrap.exec action
     action = (if match then match[1] else "(#{action}())").
-      replace(/\bnew /g, '$&yy.').
+      replace(/\bnew (\w+)\(/g, 'new yy.node("$1", ').
       replace(/\b(?:Block\.wrap|extend)\b/g, 'yy.$&')
     [patternString, "$$ = #{action};", options]
   else

@@ -44,6 +44,30 @@ tests = [
       2
     y
    """, should_throw("NameError: undefined symbol 'y'")]
+   
+  # Function bindings
+  
+  ["""
+    f0(): Int = 1
+    f0()
+   """, 1]
+
+  ["""
+    f1(x: Int): Int = x
+    f1(1)
+   """, 1]
+
+  ["""
+    f2(x: Int, y: Int): Int = 
+      z = 3
+      z
+    f2(1, 2)
+   """, 3]
+
+  ["""
+    f2(x: Int, y: Int): Int = 10
+    f2(1)
+   """, should_throw("ArgumentsError: function 'f2' takes 2 arguments but 1 given")]
 ]
 
 describe "compiler", ->

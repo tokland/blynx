@@ -13,6 +13,8 @@ class Binding
 class Environment
   constructor: (@bindings, @types, @function = []) ->
   add_binding: (name, type) ->
+    @bindings[name] and
+      error("BindingError", "Symbol '#{name}' alread bound to type '#{@bindings[name]}'")
     new_bindings = _.merge(@bindings, _.mash([[name, type]]))
     new Environment(new_bindings, @types, @function)
   get_binding: (name) ->
@@ -44,7 +46,8 @@ exports.getAST = getAST = (source, options = {}) ->
 
 exports.compile = compile = (source, options = {}) ->
   get_basic_types = (names) -> _(names).mash((name) -> [name, types[name]])
-  env = new Environment({}, get_basic_types(["Int", "Float", "String", "Tuple"])) 
+  types = get_basic_types(["Int", "Float", "String", "Tuple"])
+  env = new Environment({}, types) 
   {env: final_env, output} = getAST(source, options).compile_with_process(env)
   output + "\n"
   

@@ -1,5 +1,15 @@
 lib = require './lib'
+types = require './types'
 _ = require('./underscore_extensions')
+{error, debug} = lib
+
+translate_table = {
+  "+": "plus", "-": "minus", "*": "mul", "/": "div",  "%": "per"
+  "<": "lt",  ">": "gt", "==": "eq", "!": "neg", "?": "qm"
+}
+ 
+translateFunctionName = (s) ->
+  (translate_table[c] or c for c in s).join("") 
 
 class Root
   constructor: (@nodes) ->
@@ -26,6 +36,37 @@ class SymbolBinding
         }).call(this);
       """
 
+## Functions
+
+class FunctionBinding
+  constructor: (@name, @args, @result_type, @block) ->
+  process: (env) ->
+    args_type = new types.Tuple(lib.getTypes(@args, env).types)
+    # block_type = @block.process(env).type
+    result_type = @result_type.process(env).type
+    function_type = new types.Function(args_type, result_type)
+    {env: env.add_binding(@name, function_type), type: result_type}
+  compile: (env) -> 
+    js_args = _(@args).pluck("name").join(', ')
+    fname = translateFunctionName(@name)
+    if lib.getClass(@block) == Block
+      """
+        var #{fname} = function(#{js_args}) {>>
+          #{@block.compile(env, return: true)}<<
+        };
+      """
+    else
+      "var #{fname} = function(#{js_args}) { return #{@block.compile(env)}; };"
+
+class TypedArgument
+  constructor: (@name, @type) ->
+  process: (env) -> {env, type: @type.process(env).type}
+
+class Type
+  constructor: (@name) ->
+  process: (env) -> 
+    {env, type: new env.types[@name]}
+
 ## Expressions
 
 class Expression
@@ -42,6 +83,7 @@ class Block
       {env, type} = node.process(env, options)
     {env, type}
   compile: (env, options = {}) ->
+    _(options).defaults(return: false)
     compiled = _(@nodes).invoke("compile", env)
     last_expr = _.last(compiled)
     tail = if options.return then ["return #{last_expr}"] else [last_expr]
@@ -56,6 +98,19 @@ class Symbol
   constructor: (@id_token) ->
   process: (env) -> {env, type: env.get_binding(@id_token)}
   compile: (env) -> @id_token
+
+class FunctionCall
+  constructor: (@name, @args) ->
+  process: (env) ->
+    function_type = @name.process(env).type
+    expected = function_type.fargs.types.length
+    if @args.length != expected
+      msg = "function '#{@name.compile(env)}' takes #{expected} arguments but #{@args.length} given"
+      error("ArgumentsError", msg)
+    {env, type: function_type.result}
+  compile: (env) ->
+    name = @name.compile(env)
+    translateFunctionName(@name.compile(env)) + "(" + _(@args).invoke("compile", env).join(', ') + ")"
 
 ## Literals
   
@@ -85,9 +140,14 @@ class Tuple
 
 lib.exportClasses(exports, [
   Root, 
-  SymbolBinding, 
+  SymbolBinding, FunctionBinding, TypedArgument, Type 
   Expression, Block, StatementExpression, 
-  Symbol, 
+  Symbol, FunctionCall,
   Int, Float, String, 
   Tuple,
 ])
+
+exports.node = (class_name, args...) ->
+  klass = exports[class_name] or
+    error("InternalError", "Cannot find node '#{class_name}'")
+  new klass(args...)

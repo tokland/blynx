@@ -29,6 +29,10 @@ class Tuple extends Composed
   constructor: (@types) -> super()
   toString: -> "(" + _(@types).invoke("toString").join(", ") + ")"
 
+class Function extends Composed
+  constructor: (@fargs, @result) -> super()
+  toString: -> "#{@fargs.toString()} -> #{@result.toString()}"
+
 ##
 
-lib.exportClasses(exports, [Int, Float, String, Tuple])
+lib.exportClasses(exports, [Int, Float, String, Tuple, Function])

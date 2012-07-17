@@ -24,7 +24,7 @@ grammar =
     
   Statement: [
     o 'SymbolBinding'
-    #o 'FunctionBinding'
+    o 'FunctionBinding'
   ]
 
   SymbolBinding: [
@@ -32,19 +32,20 @@ grammar =
   ]
   
   FunctionBinding: [
-    o 'ID ( ArgumentDefinitionList ) : Type = BlockOrExpression', -> new Function($1, $3, $6, $8)
+    o 'ID ( ) : Type = BlockOrExpression', -> new FunctionBinding($1, [], $5, $7)
+    o 'ID ( TypedArgumentList ) : Type = BlockOrExpression', -> new FunctionBinding($1, $3, $6, $8)
   ]
 
-  ArgumentDefinitionList: 
-    r("ArgumentDefinition", join: ',', min: 0)
+  TypedArgumentList: 
+    r("TypedArgument", join: ',', min: 1)
 
   BlockOrExpression: [
     o "Block"
     o "Expression"
   ]
  
-  ArgumentDefinition: [
-    o "ID : Type", -> new ArgumentDefinition($1, $3)
+  TypedArgument: [
+    o "ID : Type", -> new TypedArgument($1, $3)
   ]
 
   Expression: [
@@ -52,8 +53,9 @@ grammar =
   ]
   
   InnerExpression: [
+    o 'ID', -> new Symbol($1)
+    o 'FunctionCall'
     o 'Literal'
-    o 'Symbol'
     o 'Tuple', -> new Tuple $1
   ]
 
@@ -70,13 +72,16 @@ grammar =
 
   TupleList: r("Expression", join: ',', name: "TupleList")
 
-  Symbol: [
-    o 'ID', -> new Symbol($1)
+  Type: [
+    o "CAPID", -> new Type($1)
   ]
 
-  Type: [
-    o "CAPID", -> new Type($1, [])
-  ]
+  FunctionCall: [
+    o 'ID ( )', -> new FunctionCall(new Symbol($1), [])
+    o 'ID ( ArgumentList )', -> new FunctionCall(new Symbol($1), $3)
+  ]  
+
+  ArgumentList: r("Expression", name: "ArgumentList", min: 1, join: ',')
 
 operators = [
 ]
