@@ -24,7 +24,7 @@ grammar =
     
   Statement: [
     o 'SymbolBinding'
-    o 'FunctionBinding'
+    #o 'FunctionBinding'
   ]
 
   SymbolBinding: [
@@ -67,7 +67,7 @@ grammar =
   ]
 
   Type: [
-    o "ID_CAP", -> new Type($1, [])
+    o "CAPID", -> new Type($1, [])
   ]
 
 operators = [

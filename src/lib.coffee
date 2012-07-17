@@ -33,11 +33,12 @@ exports.zipEqType = (array1, array2) ->
 unwrap = /^function\s*\(\)\s*\{\s*return\s*([\s\S]*);\s*\}/
 
 exports.createGrammarItem = o = (patternString, action, options) ->
-  patternString = patternString.replace /\s{2,}/g, ' '
+  patternString = patternString.replace(/\s{2,}/g, ' ')
   if action
-    action = if match = unwrap.exec action then match[1] else "(#{action}())"
-    action = action.replace /\bnew /g, '$&yy.'
-    action = action.replace /\b(?:Block\.wrap|extend)\b/g, 'yy.$&'
+    match = unwrap.exec action
+    action = (if match then match[1] else "(#{action}())").
+      replace(/\bnew /g, '$&yy.').
+      replace(/\b(?:Block\.wrap|extend)\b/g, 'yy.$&')
     [patternString, "$$ = #{action};", options]
   else
     [patternString, '$$ = $1;', options]
@@ -49,7 +50,7 @@ exports.recursiveGrammarItem = (rule, options) ->
     (o("", -> []) if options.min == 0)
     o(rule, -> [$1])
     if join then o("#{rule}List #{join} #{rule}", -> $1.concat($3)) else 
-                  o("#{rule}List #{rule}", -> $1.concat($2))
+                 o("#{rule}List #{rule}", -> $1.concat($2))
   ])
 
 # Nodes
@@ -59,21 +60,6 @@ exports.getTypes = (values, env) ->
     {env, type} = value.process(env)
     type
   {env, types}
-
-exports.mergeEnv = mergeEnv = (env, key, pairs) ->
-  cloned_env = _.merge(env, _.mash([[key, _.clone(env[key])]]))
-  for [name, value] in pairs 
-    cloned_env[key][name] = value
-  cloned_env
-
-exports.addBindings = addBindings = (env, pairs) ->
-  mergeEnv(env, "bindings", pairs)
-
-exports.addBinding = (env, name, type) ->
-  addBindings(env, [[name, type]])
-
-exports.addType = (env, name, value) ->
-  mergeEnv(env, "types", [[name, value]])
 
 exports.indent = (source) -> 
   _(source.split(/\n/)).freduce({indent: 0, output: []}, (state, original_line) ->

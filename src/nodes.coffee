@@ -6,16 +6,16 @@ class Root
   compile_with_process: (env) ->
     output = for node in @nodes when node
       {env, type} = node.process(env)
-      node.compile(env) 
+      node.compile(env)
     {env, output: lib.indent(_(output).compact().join("\n"))}
     
-# Statements
+## Statements
 
 class SymbolBinding
   constructor: (@id_token, @block) ->
   process: (env) -> 
     type = @block.process(env).type
-    {env: lib.addBinding(env, @id_token, type), type}
+    {env: env.add_binding(@id_token, type), type}
   compile: (env) ->
     if lib.getClass(@block) == Expression
       "var #{@id_token} = #{@block.compile(env)};"
@@ -26,23 +26,38 @@ class SymbolBinding
         }).call(this);
       """
 
-# Expressions
+## Expressions
 
 class Expression
   constructor: (@value) ->
   process: (env) -> @value.process(env)
   type: (env) -> @process(env).type
   compile: (env) -> @value.compile(env)
+
+class Block
+  constructor: (@nodes) ->
+  process: (env, options = {}) ->
+    _(@nodes).isNotEmpty() or error("SyntaxError", "Empty block")
+    for node in @nodes
+      {env, type} = node.process(env, options)
+    {env, type}
+  compile: (env, options = {}) ->
+    compiled = _(@nodes).invoke("compile", env)
+    last_expr = _.last(compiled)
+    tail = if options.return then ["return #{last_expr}"] else [last_expr]
+    _(compiled[0...-1]).concat(tail).join("\n")
+
+class StatementExpression
+  constructor: (@value) ->
+  process: (env) -> @value.process(env)
+  compile: (env) -> "#{@value.compile(env)};"
   
 class Symbol
   constructor: (@id_token) ->
-  process: (env) ->
-    if not env.bindings[@id_token]
-      error("NameError", "undefined symbol '#{@id_token}'")
-    {env, type: env.bindings[@id_token]}
+  process: (env) -> {env, type: env.get_binding(@id_token)}
   compile: (env) -> @id_token
 
-# Literals
+## Literals
   
 class Int
   constructor: (@value_token) ->
@@ -59,10 +74,12 @@ class String
   process: (env) -> {env, type: new env.types.String}
   compile: (env) -> JSON.stringify(@value)
 
+##
+
 lib.exportClasses(exports, [
   Root, 
   SymbolBinding, 
-  Expression, 
+  Expression, Block, StatementExpression, 
   Symbol, 
   Int, Float, String
 ])

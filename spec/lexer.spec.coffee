@@ -68,10 +68,13 @@ tests = [
     "[INTEGER 4] [COMMENT hello]"]
 
   ['abc String xyz',
-    "[ID abc] [ID_CAP String] [ID xyz]"]
+    "[ID abc] [CAPID String] [ID xyz]"]
+  
+  ['{x => 1, y => 2}',
+    "{ [ID x] => [INTEGER 1] , [ID y] => [INTEGER 2] }"],
 
   ['if True then 1 else 2', 
-    "[IF if] [ID_CAP True] [THEN then] [INTEGER 1] [ELSE else] [INTEGER 2]"]
+    "[IF if] [CAPID True] [THEN then] [INTEGER 1] [ELSE else] [INTEGER 2]"]
 
   ["""
     if True 
@@ -79,7 +82,7 @@ tests = [
     else 
       2
    """, [
-    "[IF if] [ID_CAP True] INDENT [INTEGER 1] TERMINATOR DEDENT",
+    "[IF if] [CAPID True] INDENT [INTEGER 1] TERMINATOR DEDENT",
     "[ELSE else] INDENT [INTEGER 2] TERMINATOR DEDENT"]]
 
   ['|x| -> x', 
@@ -90,6 +93,9 @@ tests = [
 
   ["(())",
     "( ( ) )"]
+
+  ["value$field",
+    "[ID value] $ [ID field]"]
 
   ["[1, 2][1]",
     "[ [INTEGER 1] , [INTEGER 2] ] [ [INTEGER 1] ]"]
@@ -117,16 +123,25 @@ tests = [
     "[SYMBOL_DIV /] [INTEGER 5] [SYMBOL_MINUS -] [INTEGER 10] [SYMBOL_PERCENT %] [INTEGER 2]"
   ]]
   
+  ["!x", 
+    "! [ID x]"],
+
+  ["x & y ", 
+    "[ID x] & [ID y]"],
+
+  ["x | y ", 
+    "[ID x] | [ID y]"],
+  
   # Functions
   
   ["f(x: Int, y: Int): Float =", 
-    "[ID f] ( [ID x] : [ID_CAP Int] , [ID y] : [ID_CAP Int] ) : [ID_CAP Float] ="]
+    "[ID f] ( [ID x] : [CAPID Int] , [ID y] : [CAPID Int] ) : [CAPID Float] ="]
   
   ["f(!x: Int): Float |=", 
-    "[ID f] ( ! [ID x] : [ID_CAP Int] ) : [ID_CAP Float] |="]
+    "[ID f] ( ! [ID x] : [CAPID Int] ) : [CAPID Float] |="]
 
   ["f(&x: Int): Float &=", 
-    "[ID f] ( & [ID x] : [ID_CAP Int] ) : [ID_CAP Float] &="]
+    "[ID f] ( & [ID x] : [CAPID Int] ) : [CAPID Float] &="]
  
   ["typed = 1",
     "[ID typed] = [INTEGER 1]"]
@@ -134,7 +149,7 @@ tests = [
   # Keywords
   
   ["type Bool = True | False", 
-    "[TYPE type] [ID_CAP Bool] = [ID_CAP True] | [ID_CAP False]"]
+    "[TYPE type] [CAPID Bool] = [CAPID True] | [CAPID False]"]
 
   ["external alert as myalert =", 
     "[EXTERNAL external] [ID alert] [AS as] [ID myalert] ="]

@@ -1,7 +1,6 @@
 #!/usr/bin/coffee
 yanop = require 'yanop'
 fs = require 'fs'
-vm = require 'vm'
 util = require 'util'
 path = require 'path'
 _ = require('./underscore_extensions')
@@ -13,11 +12,14 @@ lib = require('./lib')
 compile = (source, options) ->
   compiler.compile(source, debug: options.verbose, skip_prelude: !options.standalone)
 
+run = (source, options) ->
+  compiler.run(source, debug: options.verbose, skip_prelude: !options.standalone)
+
 ## Main
 
 flag = (opts) -> _.merge({type: yanop.flag}, opts)
 options = yanop.simple
-  run:        flag(short: 'r', long: "repl", default: true)
+  run:        flag(short: 'r', long: "run", default: true)
   verbose:    flag(short: 'v', long: "verbose")
   tokens:     flag(short: 't', long: "tokens")
   print:      flag(short: 'p', long: "print")
@@ -28,7 +30,7 @@ options = yanop.simple
 args = options.argv
 
 if _(args).isEmpty()
-  util.print("Usage: blynx [OPTIONS] SOURCE.bl [SOURCE2.bl ...]\n")
+  util.print("Usage: blynx [OPTIONS] SOURCE [SOURCE ...]\n")
   process.exit(1)
 
 for source_path in args
@@ -38,10 +40,6 @@ for source_path in args
     tokens = lexer.tokenize(source)
     util.print(lib.simpleTokens(tokens) + "\n")
     process.exit(0)
-  else if options.ast
-    ast = compiler.getAST(parser, source)
-    util.print(ast + "\n") # add pretty print of AST nodes
-    process.exit(0)
   else if options.print
     output = compile(source, options)
     util.print(output)
@@ -50,11 +48,9 @@ for source_path in args
     output = compile(source, options)
     jspath = source_path.replace(/\.\w+/, '.js')
     fs.writeFileSync(jspath, output, "utf8")
-    debug("Written to file: #{jspath}") 
+    debug("Written to file: #{jspath}")
   else if options.ast
-    ast = compiler.getAST(parser, source)
-    util.print(ast + "\n") # add pretty print of AST nodes
+    ast = compiler.getAST(source)
+    util.print(ast + "\n") # TODO: pretty print of AST nodes
   else if options.run
-    output = compile(source, options)
-    sandbox = {api: require('./api'), console: console}
-    vm.runInNewContext(output, sandbox)
+    run(source, options)

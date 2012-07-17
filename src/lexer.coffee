@@ -28,8 +28,9 @@ tokensDefinition =
   _KEYWORDS: keywords("type if then else external as return match case yield")
   
   _SYMBOLS_GROUPERS: b("( [ { } ] )")
-  _SYMBOLS_INTERNAL1: b("-> , ; ... .. . $ @")
-  _SYMBOLS_INTERNAL2: isolated(": = |= &= & ! |")
+  _SYMBOLS_INTERNAL1: b("-> => , ; ... .. . $ @")
+  _SYMBOLS_INTERNAL2: isolated("|= &=")
+  _SYMBOLS_INTERNAL3: isolated(": = & ! |")
 
   SYMBOL_EQUAL: op("=")  
   SYMBOL_PLUS: op("+")
@@ -51,7 +52,7 @@ tokensDefinition =
   STRING: /"(?:[^"\\]|\\.)*"/
   COMMENT: /(?:#)(.*)/
   ID: /[a-z_]\w*/
-  ID_CAP: /[A-Z]\w*/
+  CAPID: /[A-Z]\w*/
   FLOAT: /[0-9]+\.(?:[0-9]+)/
   INTEGER: /[0-9]+/
 
