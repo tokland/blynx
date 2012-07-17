@@ -43,8 +43,8 @@ exports.getAST = getAST = (source, options = {}) ->
   parser.parse(tokens)
 
 exports.compile = compile = (source, options = {}) ->
-  get_basic_types = (names) -> _(names).mash((name) -> [name, types[name]])  
-  env = new Environment({}, get_basic_types(["Int", "Float", "String"])) 
+  get_basic_types = (names) -> _(names).mash((name) -> [name, types[name]])
+  env = new Environment({}, get_basic_types(["Int", "Float", "String", "Tuple"])) 
   {env: final_env, output} = getAST(source, options).compile_with_process(env)
   output + "\n"
   

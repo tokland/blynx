@@ -54,6 +54,7 @@ grammar =
   InnerExpression: [
     o 'Literal'
     o 'Symbol'
+    o 'Tuple', -> new Tuple $1
   ]
 
   Literal: [
@@ -61,6 +62,13 @@ grammar =
     o 'FLOAT', -> new Float($1)
     o 'STRING', -> new String($1)
   ]
+
+  Tuple: [
+    o "( )", -> []
+    o "( Expression , TupleList )", -> [$2].concat($4)
+  ]
+
+  TupleList: r("Expression", join: ',', name: "TupleList")
 
   Symbol: [
     o 'ID', -> new Symbol($1)

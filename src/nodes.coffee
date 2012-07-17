@@ -74,6 +74,13 @@ class String
   process: (env) -> {env, type: new env.types.String}
   compile: (env) -> JSON.stringify(@value)
 
+class Tuple
+  constructor: (@values) ->
+  process: (env) ->
+    {env, type: new env.types.Tuple(lib.getTypes(@values, env).types)}
+  compile: (env) -> 
+    "[" + _(@values).invoke("compile", env).join(", ") + "]" 
+
 ##
 
 lib.exportClasses(exports, [
@@ -81,5 +88,6 @@ lib.exportClasses(exports, [
   SymbolBinding, 
   Expression, Block, StatementExpression, 
   Symbol, 
-  Int, Float, String
+  Int, Float, String, 
+  Tuple,
 ])

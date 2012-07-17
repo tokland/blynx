@@ -43,14 +43,15 @@ exports.createGrammarItem = o = (patternString, action, options) ->
   else
     [patternString, '$$ = $1;', options]
 
-exports.recursiveGrammarItem = (rule, options) ->
-  _(options).defaults(min: 1, join: null)
+exports.recursiveGrammarItem = (rule, options = {}) ->
+  _(options).defaults(min: 1, join: null, name: "#{rule}List")
   join = options.join
+  rule_list = options.name
   _.compact([
     (o("", -> []) if options.min == 0)
     o(rule, -> [$1])
-    if join then o("#{rule}List #{join} #{rule}", -> $1.concat($3)) else 
-                 o("#{rule}List #{rule}", -> $1.concat($2))
+    if join then o("#{rule_list} #{join} #{rule}", -> $1.concat($3)) else 
+                 o("#{rule_list} #{rule}", -> $1.concat($2))
   ])
 
 # Nodes

@@ -1,5 +1,6 @@
 should = require 'should'
-grammar = require('grammar')
+assert = require 'assert'
+grammar = require 'grammar'
 compiler = require 'compiler'
 
 should_throw = (name) -> {_should_throw: name}
@@ -12,6 +13,10 @@ tests = [
   ["1", 1]
   ["1.23", 1.23]
   ['"hello there"', "hello there"]
+  
+  ["()", []],
+  ["(1, 2.5)", [1, 2.5]],
+  ["(1, 2.5, 5)", [1, 2.5, 5]],
   
   # Symbol bindings
   
@@ -49,5 +54,4 @@ describe "compiler", ->
       else
         it "should compile:\n\n#{source}", ->
           output = compiler.run(source, skip_prelude: true)
-          should.equal(output, expected, "Failed on #{source}")
-
+          assert.deepEqual(output, expected, "Failed on #{source}")

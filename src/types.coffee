@@ -31,6 +31,4 @@ class Tuple extends Composed
 
 ##
 
-lib.exportClasses(exports, [
-  Int, Float, String
-])
+lib.exportClasses(exports, [Int, Float, String, Tuple])
