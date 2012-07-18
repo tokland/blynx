@@ -10,7 +10,7 @@ escapeRegExp = (s) ->
 b = (s) -> 
   new RegExp(_(s.split(" ")).map((c) -> escapeRegExp(c)).join("|"))
 
-operator_symbols = "= + - & | ^ < > ! : * / %".split(" ")
+operator_symbols = "= + - & | ^ < > ! : * / % ~".split(" ")
 
 isolated = (s) ->
   s2 = _(s.split(" ")).map(escapeRegExp).join("|") 
@@ -32,13 +32,14 @@ tokensDefinition =
   
   _SYMBOLS_GROUPERS: b("( [ { } ] )")
   _SYMBOLS_INTERNAL1: b("-> => , ; ... .. . $ @")
-  _SYMBOLS_INTERNAL2: isolated("|= &=")
-  _SYMBOLS_INTERNAL3: isolated(": = & ! |")
+  _SYMBOLS_INTERNAL2: isolated("|= &= : =")
+  _SYMBOLS_INTERNAL3: isolated("& ! |")
 
   SYMBOL_EQUAL: op("=")  
   SYMBOL_PLUS: op("+")
   SYMBOL_MINUS: op("-")
   SYMBOL_CIRCUMFLEX: op("^")
+  SYMBOL_TILDE: op("~")
   SYMBOL_LESS: op("<")
   SYMBOL_MORE: op(">")
   SYMBOL_EXCLAMATION: op("!")

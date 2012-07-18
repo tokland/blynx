@@ -7,19 +7,8 @@ lib = require './lib'
 native_infix_operators = "+ - * / % < <= == > >= || &&".split(" ")
 
 translate_table = {
-  "=": "equal"
-  "+": "plus"
-  "-": "minus"
-  "^": "circumflex"
-  "<": "less"
-  ">": "more"
-  "!": "exclamation",
-  ":": "colon"
-  "*": "mul"
-  "/": "div"
-  "%": "percent"
-  "&": "ampersand"
-  "|": "pipe"
+  "+": "plus", "-": "minus", "*": "mul", "/": "div",  "%": "per"
+  "<": "lt",  ">": "gt", "==": "eq", "!": "neg", "?": "qm"
 }
  
 translateFunctionName = (s) ->

@@ -3,13 +3,28 @@ types = require './types'
 _ = require('./underscore_extensions')
 {error, debug} = lib
 
-translate_table = {
-  "+": "plus", "-": "minus", "*": "mul", "/": "div",  "%": "per"
-  "<": "lt",  ">": "gt", "==": "eq", "!": "neg", "?": "qm"
-}
+translate_table =
+  "=": "equal"
+  "+": "plus"
+  "-": "minus"
+  "^": "circumflex"
+  "~": "tilde" 
+  "<": "less"
+  ">": "more"
+  "!": "exclamation",
+  ":": "colon"
+  "*": "mul"
+  "/": "div"
+  "%": "percent"
+  "&": "ampersand"
+  "|": "pipe"
  
 translateFunctionName = (s) ->
-  (translate_table[c] or c for c in s).join("") 
+  ((if translate_table[c] then "__#{translate_table[c]}" else c) for c in s).join("") 
+
+exports.FunctionCallFromID = (name, args, options = {}) ->
+  name2 = if options.unary then "#{name}_unary" else name
+  new FunctionCall(new Symbol(name2), args)
 
 class Root
   constructor: (@nodes) ->
@@ -39,7 +54,8 @@ class SymbolBinding
 ## Functions
 
 class FunctionBinding
-  constructor: (@name, @args, @result_type, @block) ->
+  constructor: (name, @args, @result_type, @block, options = {}) ->
+    @name = if options.unary then "#{name}_unary" else name
   process: (env) ->
     args_type = new types.Tuple(lib.getTypes(@args, env).types)
     # block_type = @block.process(env).type

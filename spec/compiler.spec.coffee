@@ -68,6 +68,51 @@ tests = [
     f2(x: Int, y: Int): Int = 10
     f2(1)
    """, should_throw("ArgumentsError: function 'f2' takes 2 arguments but 1 given")]
+   
+  # Infix operators
+  
+  ["""
+    (+)(x: Int, y: Int): Int = 1
+    (-)(x: Int, y: Int): Int = 2
+    (^)(x: Int, y: Int): Int = 3
+    (~)(x: Int, y: Int): Int = 4
+    (<)(x: Int, y: Int): Int = 5
+    (>)(x: Int, y: Int): Int = 6
+    (!)(x: Int, y: Int): Int = 7
+    (*)(x: Int, y: Int): Int = 8
+    (/)(x: Int, y: Int): Int = 9
+    (%)(x: Int, y: Int): Int = 10
+    (&)(x: Int, y: Int): Int = 11
+    (|)(x: Int, y: Int): Int = 12
+    
+    (0+0, 0-0, 0^0, 0~0, 0<0, 0>0, 0!0, 0*0, 0/0, 0%0, 0&0, 0|0)
+   """, [1..12]]
+
+  ["""
+    (++)(x: Int, y: Int): Int = 1
+    (--)(x: Int, y: Int): Int = 2
+    (==)(x: Int, y: Int): Int = 3
+    (!=)(x: Int, y: Int): Int = 4
+    (<=)(x: Int, y: Int): Int = 5    
+    (>=)(x: Int, y: Int): Int = 6
+    (^^)(x: Int, y: Int): Int = 7
+    (~~)(x: Int, y: Int): Int = 8
+    (!!)(x: Int, y: Int): Int = 9
+    (::)(x: Int, y: Int): Int = 10
+    (&&)(x: Int, y: Int): Int = 11
+    (||)(x: Int, y: Int): Int = 12
+    
+    (0++0, 0--0, 0==0, 0!=0, 0<=0, 0>=0, 0^^0, 0~~0, 0!!0, 0::0, 0&&0, 0||0)
+   """, [1..12]]
+
+  ["""
+    ($-)(x: Int): Int = 1
+    ($+)(x: Int): Int = 2
+    ($!)(x: Int): Int = 3
+    ($~)(x: Int): Int = 4
+    
+    (-0, +0, !0, ~0)
+   """, [1, 2, 3, 4]]
 ]
 
 describe "compiler", ->

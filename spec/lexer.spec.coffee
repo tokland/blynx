@@ -118,6 +118,9 @@ tests = [
   ["> >= < <= ==", 
     "[SYMBOL_MORE >] [SYMBOL_MORE >=] [SYMBOL_LESS <] [SYMBOL_LESS <=] [SYMBOL_EQUAL ==]"]
 
+  ["~1", 
+    "[SYMBOL_TILDE ~] [INTEGER 1]"]
+
   ["10*2+10/5-10%2", [
     "[INTEGER 10] [SYMBOL_MUL *] [INTEGER 2] [SYMBOL_PLUS +] [INTEGER 10]"
     "[SYMBOL_DIV /] [INTEGER 5] [SYMBOL_MINUS -] [INTEGER 10] [SYMBOL_PERCENT %] [INTEGER 2]"
@@ -126,10 +129,10 @@ tests = [
   ["!x", 
     "! [ID x]"],
 
-  ["x & y ", 
+  ["x & y",
     "[ID x] & [ID y]"],
 
-  ["x | y ", 
+  ["x | y", 
     "[ID x] | [ID y]"],
   
   # Functions
@@ -145,6 +148,9 @@ tests = [
  
   ["typed = 1",
     "[ID typed] = [INTEGER 1]"]
+
+  ["($-)(x: Int): Int = -x", 
+    "( $ [SYMBOL_MINUS -] ) ( [ID x] : [CAPID Int] ) : [CAPID Int] = [SYMBOL_MINUS -] [ID x]"]
     
   # Keywords
   
