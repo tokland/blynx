@@ -85,8 +85,8 @@ grammar =
     o 'SYMBOL_MINUS Expression', (-> new FunctionCallFromID($1, [$2], unary: true)), prec: 'UNARY'
     o 'SYMBOL_PLUS Expression', (-> new FunctionCallFromID($1, [$2], unary: true)), prec: 'UNARY'
     o 'SYMBOL_EXCLAMATION Expression', (-> new FunctionCallFromID($1, [$2], unary: true)), prec: 'UNARY'
-    o '! Expression', (-> new FunctionCallFromID($1, [$2], unary: true)), prec: 'UNARY'
     o 'SYMBOL_TILDE Expression', (-> new FunctionCallFromID($1, [$2], unary: true)), prec: 'UNARY'
+    o '! Expression', (-> new FunctionCallFromID($1, [$2], unary: true)), prec: 'UNARY'
     
     o 'Expression SYMBOL_EQUAL Expression', -> new FunctionCallFromID($2, [$1, $3])
     o 'Expression SYMBOL_PLUS Expression', -> new FunctionCallFromID($2, [$1, $3])
@@ -145,7 +145,9 @@ operators = [
   ["left", "SYMBOL_MUL", "SYMBOL_DIV", "SYMBOL_PERCENT"]
 ]
 
-exports.parser = new jison.Parser
+grammar_options = 
   bnf: grammar
   operators: operators
   startSymbol: 'Root'
+
+exports.parser = new jison.Parser(grammar_options)

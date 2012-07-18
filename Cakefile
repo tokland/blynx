@@ -14,9 +14,8 @@ task 'build', 'Compile main project', ->
 
 task 'grammar', 'Compile language grammar', ->
   build()
-  grammar = require './lib/grammar'
-  parser = grammar.getParser(debug: true)
-  parser.generate()
+  grammar = require './src/grammar'
+  grammar.parser.generate()
   
 task 'specs', 'Run specs', ->
   process.env["NODE_PATH"] += ":src"

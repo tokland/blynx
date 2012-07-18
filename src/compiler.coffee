@@ -14,7 +14,7 @@ class Environment
   constructor: (@bindings, @types, @function = []) ->
   add_binding: (name, type) ->
     @bindings[name] and
-      error("BindingError", "Symbol '#{name}' alread bound to type '#{@bindings[name]}'")
+      error("BindingError", "Symbol '#{name}' already bound to type '#{@bindings[name]}'")
     new_bindings = _.merge(@bindings, _.mash([[name, type]]))
     new Environment(new_bindings, @types, @function)
   get_binding: (name) ->
