@@ -7,6 +7,7 @@ class TypeBase
   @inspect: -> constructor.name
   constructor: -> @classname = @constructor.name
   inspect: -> @toString()
+  getTypes: -> [this]
 
 class Scalar extends TypeBase
   scalar: true
@@ -28,6 +29,7 @@ class String extends Scalar
 class Tuple extends Composed
   constructor: (@types) -> super()
   toString: -> "(" + _(@types).invoke("toString").join(", ") + ")"
+  getTypes: -> @types
 
 class Function extends Composed
   constructor: (@fargs, @result) -> super()
@@ -35,4 +37,14 @@ class Function extends Composed
 
 ##
 
+exports.isSameType = isSameType = (expected, given) ->
+  if expected.classname == given.classname
+    if given.scalar
+      true
+    else
+      pairs = _.zip(expected.getTypes(), given.getTypes())
+      _.all(pairs, ([e, g]) -> isSameType(e, g))
+  else
+    false
+   
 lib.exportClasses(exports, [Int, Float, String, Tuple, Function])

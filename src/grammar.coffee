@@ -80,7 +80,7 @@ grammar =
     o 'ID', -> new Symbol($1)
     o 'FunctionCall'
     o 'Literal'
-    o 'Tuple', -> new Tuple $1
+    o 'Tuple', -> new Tuple($1)
     
     o 'SYMBOL_MINUS Expression', (-> new FunctionCallFromID($1, [$2], unary: true)), prec: 'UNARY'
     o 'SYMBOL_PLUS Expression', (-> new FunctionCallFromID($1, [$2], unary: true)), prec: 'UNARY'
@@ -145,9 +145,7 @@ operators = [
   ["left", "SYMBOL_MUL", "SYMBOL_DIV", "SYMBOL_PERCENT"]
 ]
 
-grammar_options = 
+exports.parser = new jison.Parser
   bnf: grammar
   operators: operators
   startSymbol: 'Root'
-
-exports.parser = new jison.Parser(grammar_options)

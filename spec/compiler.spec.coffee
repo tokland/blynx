@@ -68,6 +68,11 @@ tests = [
     f2(x: Int, y: Int): Int = 10
     f2(1)
    """, should_throw("ArgumentsError: function 'f2' takes 2 arguments but 1 given")]
+
+  ["""
+    f(x: Int): Float = 1.23
+    f("hello")
+   """, should_throw("TypeError: function '(Int) -> Float', called with arguments '(String)'")]
    
   # Infix operators
   

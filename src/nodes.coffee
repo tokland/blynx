@@ -58,8 +58,10 @@ class FunctionBinding
     @name = if options.unary then "#{name}_unary" else name
   process: (env) ->
     args_type = new types.Tuple(lib.getTypes(@args, env).types)
-    # block_type = @block.process(env).type
+    block_type = @block.process(env).type
     result_type = @result_type.process(env).type
+    if not types.isSameType(result_type, block_type)
+      error("TypeError", "function '#{@name}' expected to return '#{result_type}', but returns '#{block_type}'")
     function_type = new types.Function(args_type, result_type)
     {env: env.add_binding(@name, function_type), type: result_type}
   compile: (env) -> 
@@ -123,6 +125,10 @@ class FunctionCall
     if @args.length != expected
       msg = "function '#{@name.compile(env)}' takes #{expected} arguments but #{@args.length} given"
       error("ArgumentsError", msg)
+    expected = function_type.fargs
+    given = new types.Tuple(a.process(env).type for a in @args)
+    if not types.isSameType(expected, given)
+      error("TypeError", "function '#{function_type}', called with arguments '#{given}'") 
     {env, type: function_type.result}
   compile: (env) ->
     name = @name.compile(env)
@@ -149,7 +155,7 @@ class Tuple
   constructor: (@values) ->
   process: (env) ->
     {env, type: new env.types.Tuple(lib.getTypes(@values, env).types)}
-  compile: (env) -> 
+  compile: (env) ->
     "[" + _(@values).invoke("compile", env).join(", ") + "]" 
 
 ##
