@@ -73,6 +73,11 @@ tests = [
     f(x: Int): Float = 1.23
     f("hello")
    """, should_throw("TypeError: function '(Int) -> Float', called with arguments '(String)'")]
+
+  ["""
+    f1(x: Int): Float = x
+    f1(1)
+   """, should_throw("TypeError: function 'f1' should return 'Float' but returns 'Int'")]
    
   # Infix operators
   

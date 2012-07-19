@@ -58,10 +58,13 @@ class FunctionBinding
     @name = if options.unary then "#{name}_unary" else name
   process: (env) ->
     args_type = new types.Tuple(lib.getTypes(@args, env).types)
-    block_type = @block.process(env).type
+    block_env = _.freduce @args, env, (block_env, arg) ->
+      block_env.add_binding(arg.name, arg.process(env).type)
+    block_type = @block.process(block_env).type
     result_type = @result_type.process(env).type
     if not types.isSameType(result_type, block_type)
-      error("TypeError", "function '#{@name}' expected to return '#{result_type}', but returns '#{block_type}'")
+      error("TypeError",
+        "function '#{@name}' should return '#{result_type}' but returns '#{block_type}'")
     function_type = new types.Function(args_type, result_type)
     {env: env.add_binding(@name, function_type), type: result_type}
   compile: (env) -> 
