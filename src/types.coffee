@@ -5,6 +5,7 @@ lib = require './lib'
 
 class TypeBase
   @inspect: -> constructor.name
+  @toString: -> @inspect()
   constructor: -> @classname = @constructor.name
   inspect: -> @toString()
   getTypes: -> [this]
@@ -35,6 +36,12 @@ class Function extends Composed
   constructor: (@fargs, @result) -> super()
   toString: -> "#{@fargs.toString()} -> #{@result.toString()}"
 
+## ADT
+
+exports.buildType = (name) ->
+  class UserType extends Scalar
+    toString: -> name
+  
 ##
 
 exports.isSameType = isSameType = (expected, given) ->

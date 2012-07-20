@@ -23,8 +23,16 @@ grammar =
   ]
     
   Statement: [
+    o 'TYPE CAPID = TypeConstructorList', -> new TypeDefinition($2, $4)
     o 'SymbolBinding'
     o 'FunctionBinding'
+  ]
+
+  TypeConstructorList:
+    r 'TypeConstructor', min: 1, join: "|"
+
+  TypeConstructor: [
+    o "CAPID", -> new TypeConstructorDefinition($1)
   ]
 
   SymbolBinding: [
@@ -78,6 +86,7 @@ grammar =
   
   InnerExpression: [
     o 'ID', -> new Symbol($1)
+    o 'CAPID', -> new Symbol($1)
     o 'FunctionCall'
     o 'Literal'
     o 'Tuple', -> new Tuple($1)

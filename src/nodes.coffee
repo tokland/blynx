@@ -86,7 +86,7 @@ class TypedArgument
 class Type
   constructor: (@name) ->
   process: (env) -> 
-    {env, type: new env.types[@name]}
+    {env, type: new(env.get_type(@name))}
 
 ## Expressions
 
@@ -163,6 +163,25 @@ class Tuple
 
 ##
 
+class TypeDefinition
+  constructor: (@name, @constructors) ->
+  process: (env) ->
+    type = types.buildType(@name)
+    env_with_type = env.add_type(@name, type)
+    new_env = _.freduce @constructors, env_with_type, (e, constructor) ->
+      e.add_binding(constructor.name, new type)
+    {env: new_env, type: new type}
+  compile: (env) ->
+    "// type #{@name}\n" +
+      _(@constructors).invoke("compile", env).join("\n") + "\n"
+
+class TypeConstructorDefinition
+  constructor: (@name) ->
+  compile: (env) ->
+    "var #{@name} = {};"
+
+##
+
 lib.exportClasses(exports, [
   Root, 
   SymbolBinding, FunctionBinding, TypedArgument, Type 
@@ -170,6 +189,7 @@ lib.exportClasses(exports, [
   Symbol, FunctionCall,
   Int, Float, String, 
   Tuple,
+  TypeDefinition, TypeConstructorDefinition
 ])
 
 exports.node = (class_name, args...) ->

@@ -123,6 +123,24 @@ tests = [
     
     (-0, +0, !0, ~0)
    """, [1, 2, 3, 4]]
+   
+  # ADT
+
+  ["""
+    type Bool = True | False
+    f(x: Bool, y: Bool): Int = 1
+    f(True, False)
+  """, 1]
+
+  ["""
+    type Bool = True | False
+    type Bool = AnotherTrue | AnotherFalse
+  """, should_throw("TypeError: type 'Bool' already defined")]
+
+  ["""
+    type Bool = True | False
+    type AnotherBool = AnotherTrue | False
+  """, should_throw("BindingError: symbol 'False' already bound to type 'Bool'")]
 ]
 
 describe "compiler", ->
