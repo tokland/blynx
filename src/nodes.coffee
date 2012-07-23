@@ -58,8 +58,6 @@ class FunctionBinding
   constructor: (name, @args, @result_type, @block, options = {}) ->
     @name = if options.unary then "#{name}_unary" else name
   process: (env) ->
-    args_ns = ([arg.name, arg.process(env).type] for arg in @args)
-    args_type = new types.NamedTuple(args_ns)
     block_env = _.freduce @args, env, (block_env, arg) ->
       block_env.add_binding(arg.name, arg.process(env).type, 
         error_msg: "argument '#{arg.name}' already defined in function binding")
@@ -68,8 +66,8 @@ class FunctionBinding
     if not types.isSameType(result_type, block_type)
       error("TypeError",
         "function '#{@name}' should return '#{result_type}' but returns '#{block_type}'")
-    function_type = new types.Function(args_type, result_type)
-    {env: env.add_binding(@name, function_type), type: result_type}
+    new_env = env.add_function_binding(@name, @args, result_type)
+    {env: new_env, type: result_type}
   compile: (env) -> 
     js_args = _(@args).pluck("name").join(', ')
     fname = translateFunctionName(@name)
@@ -191,26 +189,36 @@ class TypeDefinition
     type = types.buildType(@name)
     env_with_type = env.add_type(@name, type)
     new_env = _.freduce @constructors, env_with_type, (e, constructor) ->
-      e.add_binding(constructor.name, new type)
+      constructor.add_binding(e, type)
     {env: new_env, type: new type}
   compile: (env) ->
     "// type #{@name}\n" +
       _(@constructors).invoke("compile", env).join("\n") + "\n"
 
 class TypeConstructorDefinition
-  constructor: (@name) ->
+  constructor: (@name, @args) ->
   compile: (env) ->
-    "var #{@name} = {};"
+    if _(@args).isEmpty()
+      "var #{@name} = {};"
+    else
+      names = _(@args).pluck("name")
+      val = "{" + ("#{JSON.stringify(n)}: #{n}" for n in names) + "}"
+      "var #{@name} = function(#{names.join(', ')}) { return #{val}; };"
+  add_binding: (env, type) ->
+    binding_type = if _(@args).isEmpty()
+      env.add_binding(@name, new type) 
+    else
+      env.add_function_binding(@name, @args, new type)
 
 ##
 
 lib.exportClasses(exports, [
-  Root, 
-  SymbolBinding, FunctionBinding, TypedArgument, Type 
-  Expression, Block, StatementExpression, 
-  Symbol, FunctionCall, FunctionArgument,
-  Int, Float, String, 
-  Tuple,
+  Root
+  SymbolBinding, FunctionBinding, TypedArgument, Type
+  Expression, Block, StatementExpression
+  Symbol, FunctionCall, FunctionArgument
+  Int, Float, String
+  Tuple
   TypeDefinition, TypeConstructorDefinition
 ])
 

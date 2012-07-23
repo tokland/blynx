@@ -32,7 +32,8 @@ grammar =
     r 'TypeConstructor', min: 1, join: "|"
 
   TypeConstructor: [
-    o "CAPID", -> new TypeConstructorDefinition($1)
+    o "CAPID", -> new TypeConstructorDefinition($1, [])
+    o "CAPID ( TypedArgumentList )", -> new TypeConstructorDefinition($1, $3)
   ]
 
   SymbolBinding: [
@@ -137,6 +138,7 @@ grammar =
   FunctionCall: [
     o 'ID ( )', -> new FunctionCall(new Symbol($1), [])
     o 'ID ( FunctionArgumentList )', -> new FunctionCall(new Symbol($1), $3)
+    o 'CAPID ( FunctionArgumentList )', -> new FunctionCall(new Symbol($1), $3)
   ]  
 
   FunctionArgumentList:

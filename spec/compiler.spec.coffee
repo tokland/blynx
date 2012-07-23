@@ -187,6 +187,19 @@ tests = [
     type Bool = True | False
     type AnotherBool = AnotherTrue | False
   """, should_throw("BindingError: symbol 'False' already bound to type 'Bool'")]
+
+  # ADT with arguments
+  
+  ["""
+    type Shape = Square(side: Int) | Circle
+    f(x: Shape, y: Shape): Int = 1
+    f(Square(5), Circle)
+  """, 1]
+
+  ["""
+    type Shape = Square(side: Int) | Circle
+    Square(1.23)
+  """, should_throw("TypeError: function '(side: Int) -> Shape', called with arguments '(side: Float)'")]
 ]
 
 describe "compiler", ->

@@ -34,6 +34,11 @@ class Environment
   get_type: (name) ->
     @types[name] or
       error("TypeError", "undefined type '#{name}'")
+  add_function_binding: (name, args, result_type) ->
+    args_ns = ([arg.name, arg.process(this).type] for arg in args)
+    args_type = new types.NamedTuple(args_ns)
+    function_type = new types.Function(args_type, result_type)
+    @add_binding(name, function_type)
 
 ## Functions
 
@@ -59,12 +64,12 @@ exports.getAST = getAST = (source, options = {}) ->
   parser.parse(tokens)
 
 exports.compile = compile = (source, options = {}) ->
-  get_basic_types = (names) -> _(names).mash((name) -> [name, types[name]])
-  types = get_basic_types(["Int", "Float", "String", "Tuple"])
-  env = new Environment({}, types)
+  get_basic_types = (names) -> 
+    _(names).mash((name) -> [name, types[name]])
+  basic_types = get_basic_types(["Int", "Float", "String", "Tuple"])
+  env = new Environment({}, basic_types)
   {env: final_env, output} = getAST(source, options).compile_with_process(env)
-  if options.debug
-    process.stderr.write(final_env.inspect()+"\n") 
+  process.stderr.write(final_env.inspect()+"\n") if options.debug 
   output + "\n"
   
 exports.run = (source, options = {}) ->
