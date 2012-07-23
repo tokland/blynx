@@ -69,7 +69,7 @@ grammar =
   ]
 
   TypedArgumentList: 
-    r("TypedArgument", join: ',', min: 1)
+    r 'TypedArgument', join: ',', min: 1
 
   BlockOrExpression: [
     o "Block"
@@ -114,7 +114,7 @@ grammar =
     o 'Expression & Expression', -> new FunctionCallFromID($2, [$1, $3])
     o 'Expression SYMBOL_PIPE Expression', -> new FunctionCallFromID($2, [$1, $3])
     o 'Expression | Expression', -> new FunctionCallFromID($2, [$1, $3])
-  ] 
+  ]
 
   Literal: [
     o 'INTEGER', -> new Int($1)
@@ -128,7 +128,7 @@ grammar =
   ]
 
   TupleList: 
-    r("Expression", name: "TupleList", join: ',')
+    r 'Expression', name: 'TupleList', join: ','
 
   Type: [
     o "CAPID", -> new Type($1)
@@ -136,12 +136,17 @@ grammar =
 
   FunctionCall: [
     o 'ID ( )', -> new FunctionCall(new Symbol($1), [])
-    o 'ID ( ArgumentList )', -> new FunctionCall(new Symbol($1), $3)
+    o 'ID ( FunctionArgumentList )', -> new FunctionCall(new Symbol($1), $3)
   ]  
 
-  ArgumentList: 
-    r("Expression", name: "ArgumentList", min: 1, join: ',')
-
+  FunctionArgumentList:
+    r 'FunctionArgument', join: ',', min: 1
+    
+  FunctionArgument: [
+    o 'ID = Expression', -> new FunctionArgument($1, $3)
+    o 'Expression', -> new FunctionArgument('', $1)
+  ]
+  
 operators = [
   ['nonassoc',  'INDENT', 'DEDENT']
   ["left", "SYMBOL_AMPERSAND", "&", "SYMBOL_PIPE", "|"]

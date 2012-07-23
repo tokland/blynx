@@ -17,9 +17,10 @@ class Environment
     "Environment:\n" + 
       "  Types: " + _.keys(@types).join(", ") + "\n" + 
       "  Bindings: " + (if _(@bindings).isEmpty() then "none" else "\n"+bindings) + "\n"
-  add_binding: (name, type) ->
-    @bindings[name] and
-      error("BindingError", "symbol '#{name}' already bound to type '#{@bindings[name]}'")
+  add_binding: (name, type, options = {}) ->
+    if @bindings[name]
+      msg = options.error_msg or "symbol '#{name}' already bound to type '#{@bindings[name]}'"  
+      error("BindingError", msg)
     new_bindings = _.merge(@bindings, _.mash([[name, type]]))
     new Environment(new_bindings, @types, @function)
   get_binding: (name) ->

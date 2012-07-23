@@ -24,7 +24,8 @@ translateFunctionName = (s) ->
 
 exports.FunctionCallFromID = (name, args, options = {}) ->
   name2 = if options.unary then "#{name}_unary" else name
-  new FunctionCall(new Symbol(name2), args)
+  args2 = (new FunctionArgument("", arg) for arg in args)
+  new FunctionCall(new Symbol(name2), args2)
 
 class Root
   constructor: (@nodes) ->
@@ -57,9 +58,11 @@ class FunctionBinding
   constructor: (name, @args, @result_type, @block, options = {}) ->
     @name = if options.unary then "#{name}_unary" else name
   process: (env) ->
-    args_type = new types.Tuple(lib.getTypes(@args, env).types)
+    args_ns = ([arg.name, arg.process(env).type] for arg in @args)
+    args_type = new types.NamedTuple(args_ns)
     block_env = _.freduce @args, env, (block_env, arg) ->
-      block_env.add_binding(arg.name, arg.process(env).type)
+      block_env.add_binding(arg.name, arg.process(env).type, 
+        error_msg: "argument '#{arg.name}' already defined in function binding")
     block_type = @block.process(block_env).type
     result_type = @result_type.process(env).type
     if not types.isSameType(result_type, block_type)
@@ -120,22 +123,41 @@ class Symbol
   process: (env) -> {env, type: env.get_binding(@id_token)}
   compile: (env) -> @id_token
 
+class FunctionArgument
+  constructor: (@name, @value) ->
+  process: (env) -> @value.process(env)
+  compile: (env) -> @value.compile(env)
+
 class FunctionCall
   constructor: (@name, @args) ->
   process: (env) ->
     function_type = @name.process(env).type
-    expected = function_type.fargs.types.length
-    if @args.length != expected
-      msg = "function '#{@name.compile(env)}' takes #{expected} arguments but #{@args.length} given"
-      error("ArgumentsError", msg)
-    expected = function_type.fargs
-    given = new types.Tuple(a.process(env).type for a in @args)
-    if not types.isSameType(expected, given)
-      error("TypeError", "function '#{function_type}', called with arguments '#{given}'") 
+    expected_args = function_type.fargs
+    check_arguments_size = =>
+      size = _.size(expected_args.getTypes())
+      if _.size(@args) != size
+        msg = "function '#{@name.compile(env)}' takes #{size} arguments but #{@args.length} given"
+        error("ArgumentError", msg)
+    check_repeated_arguments = =>       
+      keys = (arg.name for arg in @args)
+      repeated_keys = (k for k, ks of _.groupBy(keys, _.identity) when k and ks.length > 1)
+      if (repeated_key = _.first(repeated_keys))
+        error("ArgumentError", "function call repeats argument '#{repeated_key}'")
+    match_types = =>
+      given_args = new types.NamedTuple([a.name, a.process(env).type] for a in @args)
+      merged = types.mergeNamedTuples(expected_args, given_args)
+      if not types.isSameType(expected_args, merged)
+        error("TypeError", "function '#{function_type}', called with arguments '#{merged}'")
+        
+    check_arguments_size()
+    check_repeated_arguments()
+    match_types()
     {env, type: function_type.result}
   compile: (env) ->
-    name = @name.compile(env)
-    translateFunctionName(@name.compile(env)) + "(" + _(@args).invoke("compile", env).join(', ') + ")"
+    key_to_index = _.mash([k, i] for [k, v], i in @name.process(env).type.fargs.types)
+    sorted_args = _.sortBy(@args, (arg) -> parseInt(key_to_index[arg.name]))
+    translateFunctionName(@name.compile(env)) + 
+      "(" + _(sorted_args).invoke("compile", env).join(', ') + ")"
 
 ## Literals
   
@@ -186,7 +208,7 @@ lib.exportClasses(exports, [
   Root, 
   SymbolBinding, FunctionBinding, TypedArgument, Type 
   Expression, Block, StatementExpression, 
-  Symbol, FunctionCall,
+  Symbol, FunctionCall, FunctionArgument,
   Int, Float, String, 
   Tuple,
   TypeDefinition, TypeConstructorDefinition

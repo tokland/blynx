@@ -67,17 +67,63 @@ tests = [
   ["""
     f2(x: Int, y: Int): Int = 10
     f2(1)
-   """, should_throw("ArgumentsError: function 'f2' takes 2 arguments but 1 given")]
+   """, should_throw("ArgumentError: function 'f2' takes 2 arguments but 1 given")]
 
   ["""
     f(x: Int): Float = 1.23
     f("hello")
-   """, should_throw("TypeError: function '(Int) -> Float', called with arguments '(String)'")]
+   """, should_throw("TypeError: function '(x: Int) -> Float', called with arguments '(x: String)'")]
 
   ["""
     f1(x: Int): Float = x
     f1(1)
    """, should_throw("TypeError: function 'f1' should return 'Float' but returns 'Int'")]
+
+  ["""
+    f1(x: Int, x: Int): Int = 1
+   """, should_throw("BindingError: argument 'x' already defined in function binding")]
+  
+  # Function calls
+
+  ["""
+    f(x: Int, y: Int): Int = x
+    f(1, 2)
+   """, 1]
+
+  ["""
+    f(x: Int, y: Int): Int = x
+    f(1, y=2)
+   """, 1]
+
+  ["""
+    f(x: Int, y: Int): Int = x
+    f(x=1, 2)
+   """, 1]
+
+  ["""
+    f(x: Int, y: Int): Int = x
+    f(x=1, y=2)
+   """, 1]
+
+  ["""
+    f(x: Int, y: Int): Int = x
+    f(y=2, x=1)
+   """, 1]
+
+  ["""
+    f(x: Int, y: Int, z: Int): Int = z
+    f(1, z=3, y=2)
+   """, 3]
+
+  ["""
+    f(x: Int, y: Int): Int = x
+    f(x=1, x=1)
+   """, should_throw("ArgumentError: function call repeats argument 'x'")]
+
+  ["""
+    f(x: Int, y: Int): Int = x
+    f(x=1, z=1)
+   """, should_throw("ArgumentError: argument 'z' not defined")]
    
   # Infix operators
   

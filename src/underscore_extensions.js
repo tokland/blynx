@@ -7,6 +7,13 @@ _.mixin({
   extend_from: function(object, source_object, key_names) {   
     return _(object).extend(_(source_object).slice(key_names));
   },
+  
+  /* Return sorted object (leave original untouched) */
+  sort: function(object) {
+    var object2 = _.clone(object);
+    object2.sort();
+    return object2;
+  },
 
   /* Alias: update = extend */
   update: _.extend,

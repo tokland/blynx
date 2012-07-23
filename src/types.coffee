@@ -32,6 +32,21 @@ class Tuple extends Composed
   toString: -> "(" + _(@types).invoke("toString").join(", ") + ")"
   getTypes: -> @types
 
+class NamedTuple extends Composed
+  constructor: (@types) -> super()
+  toString: -> "(" + ("#{k or '_'}: #{v}" for [k, v] in @types).join(", ") + ")"
+  getTypes: -> (v for [k, v] in @types)
+
+exports.mergeNamedTuples = (base, given) ->
+  index_to_key = _.mash([i, k] for [k, v], i in base.types)
+  key_to_index = _.mash([k, i] for i, k of index_to_key)
+  if (key = _.first(key for [key, type] in given.types when key not of key_to_index))
+    error("ArgumentError", "argument '#{key}' not defined")
+  indexed_pairs = _.map given.types, ([given_key, type], idx) ->
+    key = given_key or index_to_key[idx]
+    {position: parseInt(key_to_index[key]), pair: [key, type]}
+  new NamedTuple(o.pair for o in _.sortBy(indexed_pairs, (o) -> o.position))
+
 class Function extends Composed
   constructor: (@fargs, @result) -> super()
   toString: -> "#{@fargs.toString()} -> #{@result.toString()}"
@@ -54,4 +69,4 @@ exports.isSameType = isSameType = (expected, given) ->
   else
     false
    
-lib.exportClasses(exports, [Int, Float, String, Tuple, Function])
+lib.exportClasses(exports, [Int, Float, String, Tuple, NamedTuple, Function])
