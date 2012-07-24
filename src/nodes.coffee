@@ -89,6 +89,12 @@ class Type
   process: (env) -> 
     {env, type: new(env.get_type(@name))}
 
+class TupleType
+  constructor: (@types) ->
+  process: (env) ->
+    type = new types.Tuple(lib.getTypes(@types, env).types)
+    {env, type: type}
+
 ## Expressions
 
 class Expression
@@ -214,7 +220,8 @@ class TypeConstructorDefinition
 
 lib.exportClasses(exports, [
   Root
-  SymbolBinding, FunctionBinding, TypedArgument, Type
+  SymbolBinding, FunctionBinding, TypedArgument, 
+  Type, TupleType
   Expression, Block, StatementExpression
   Symbol, FunctionCall, FunctionArgument
   Int, Float, String

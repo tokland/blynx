@@ -133,7 +133,15 @@ grammar =
 
   Type: [
     o "CAPID", -> new Type($1)
+    o "TupleType"
   ]
+  
+  TupleType: [
+    o "( TupleTypeList )", -> new TupleType($2)
+  ]
+  
+  TupleTypeList: 
+    r 'Type', name: "TupleTypeList", min: 1, join: ','
 
   FunctionCall: [
     o 'ID ( )', -> new FunctionCall(new Symbol($1), [])

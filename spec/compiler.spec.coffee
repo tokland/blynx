@@ -124,7 +124,29 @@ tests = [
     f(x: Int, y: Int): Int = x
     f(x=1, z=1)
    """, should_throw("ArgumentError: argument 'z' not defined")]
-   
+  
+  # Type signatures
+  
+  ["""
+    f(x: Int): Int = x
+    f(1)
+  """, 1]
+
+  ["""
+    f(x: Float): Float = x
+    f(1.23)
+  """, 1.23]
+
+  ["""
+    f(x: String): String = x
+    f("hello")
+  """, "hello"]
+
+  ["""
+    f(x: (Int, Float)): (Int, Float) = x 
+    f((1, 2.34))
+  """, [1, 2.34]]
+  
   # Infix operators
   
   ["""
