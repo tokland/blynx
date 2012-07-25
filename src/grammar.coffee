@@ -3,14 +3,12 @@ jison = require 'jison'
 
 grammar =
   Root: [
-    ["EOF", "return new yy.Root([]);"]
-    ["Body EOF", "return new yy.Root($1);"]
+    ['EOF', 'return new yy.Root([]);']
+    ['Lines EOF', 'return new yy.Root($1);']
   ]
 
-  Body: [
-    o "Line", -> [$1]
-    o "Body Line", -> $1.concat($2)
-  ]
+  Lines: 
+    r 'Line', name: 'Lines', min: 1
 
   Line: [
     o 'Statement TERMINATOR'
@@ -19,66 +17,61 @@ grammar =
   ]
 
   Block: [
-    o 'INDENT Body DEDENT', -> new Block($2)
+    o 'INDENT Lines DEDENT', -> new Block($2)
   ]
     
   Statement: [
-    o 'TYPE CAPID = TypeConstructorList', -> new TypeDefinition($2, $4)
+    o 'TypeDefinition'
     o 'SymbolBinding'
     o 'FunctionBinding'
   ]
-
-  TypeConstructorList:
-    r 'TypeConstructor', min: 1, join: "|"
-
-  TypeConstructor: [
-    o "CAPID", -> new TypeConstructorDefinition($1, [])
-    o "CAPID ( TypedArgumentList )", -> new TypeConstructorDefinition($1, $3)
+  
+  TypeDefinition: [
+    o 'TYPE CAPID = TypeConstructorList', -> new TypeDefinition($2, $4)
   ]
 
+  TypeConstructorList:
+    r 'TypeConstructor', min: 1, join: '|'
+
+  TypeConstructor: [
+    o 'CAPID', -> new TypeConstructorDefinition($1, [])
+    o 'CAPID ( TypedArgumentList )', -> new TypeConstructorDefinition($1, $3)
+  ]
+  
   SymbolBinding: [
     o 'ID = BlockOrExpression', -> new SymbolBinding($1, $3)
   ]
   
   FunctionBinding: [
-    o 'ID ( ) : Type = BlockOrExpression', -> new FunctionBinding($1, [], $5, $7)
-    o 'ID ( TypedArgumentList ) : Type = BlockOrExpression', -> new FunctionBinding($1, $3, $6, $8)
-    o '( Symbol ) ( TypedArgumentList ) : Type = BlockOrExpression', 
-        -> new FunctionBinding($2, $5, $8, $10)
-    o '( $ Symbol ) ( TypedArgumentList ) : Type = BlockOrExpression', 
-        -> new FunctionBinding($3, $6, $9, $11, unary: true)
+    o 'ID ( ) : Type = BlockOrExpression', 
+      -> new FunctionBinding($1, [], $5, $7)
+    o 'ID ( TypedArgumentList ) : Type = BlockOrExpression', 
+      -> new FunctionBinding($1, $3, $6, $8)
+    o '( OpSymbol ) ( TypedArgumentList ) : Type = BlockOrExpression', 
+      -> new FunctionBinding($2, $5, $8, $10)
+    o '( $ OpSymbol ) ( TypedArgumentList ) : Type = BlockOrExpression', 
+      -> new FunctionBinding($3, $6, $9, $11, unary: true)
   ]
   
-  Symbol: [
-    o "SYMBOL_EQUAL"  
-    o "SYMBOL_PLUS"
-    o "SYMBOL_MINUS"
-    o "SYMBOL_CIRCUMFLEX"
-    o "SYMBOL_TILDE"
-    o "SYMBOL_LESS"
-    o "SYMBOL_MORE"
-    o "SYMBOL_EXCLAMATION"
-    o "SYMBOL_COLON"
-    o "SYMBOL_MUL"
-    o "SYMBOL_DIV"
-    o "SYMBOL_PERCENT"
-    o "SYMBOL_AMPERSAND"
-    o "SYMBOL_PIPE"
-    o "&"
-    o "|"
-    o "!"
-  ]
+  OpSymbol: (
+    o(symbol) for symbol in [
+      'SYMBOL_EQUAL', 'SYMBOL_PLUS', 'SYMBOL_MINUS', 'SYMBOL_CIRCUMFLEX'
+      'SYMBOL_TILDE', 'SYMBOL_LESS', 'SYMBOL_MORE', 'SYMBOL_EXCLAMATION'
+      'SYMBOL_COLON', 'SYMBOL_MUL', 'SYMBOL_DIV', 'SYMBOL_PERCENT'
+      'SYMBOL_AMPERSAND', 'SYMBOL_PIPE', '&', '|', '!'
+    ]
+  )
 
   TypedArgumentList: 
     r 'TypedArgument', join: ',', min: 1
 
   BlockOrExpression: [
-    o "Block"
-    o "Expression"
+    o 'Block'
+    o 'Expression'
   ]
  
   TypedArgument: [
-    o "ID : Type", -> new TypedArgument($1, $3)
+    o 'ID : Type', -> new TypedArgument($1, $3)
   ]
 
   Expression: [
@@ -87,62 +80,51 @@ grammar =
   
   InnerExpression: [
     o '( Expression )', -> new ParenExpression($2)
-    o 'ID', -> new Symbol($1)
-    o 'CAPID', -> new Symbol($1)
+    o 'Symbol', -> new Symbol($1)
     o 'FunctionCall'
     o 'Literal'
-    o 'Tuple', -> new Tuple($1)
-    
-    o 'SYMBOL_MINUS Expression', (-> new FunctionCallFromID($1, [$2], unary: true)), prec: 'UNARY'
-    o 'SYMBOL_PLUS Expression', (-> new FunctionCallFromID($1, [$2], unary: true)), prec: 'UNARY'
-    o 'SYMBOL_EXCLAMATION Expression', (-> new FunctionCallFromID($1, [$2], unary: true)), prec: 'UNARY'
-    o 'SYMBOL_TILDE Expression', (-> new FunctionCallFromID($1, [$2], unary: true)), prec: 'UNARY'
-    o '! Expression', (-> new FunctionCallFromID($1, [$2], unary: true)), prec: 'UNARY'
-    
-    o 'Expression SYMBOL_EQUAL Expression', -> new FunctionCallFromID($2, [$1, $3])
-    o 'Expression SYMBOL_PLUS Expression', -> new FunctionCallFromID($2, [$1, $3])
-    o 'Expression SYMBOL_MINUS Expression', -> new FunctionCallFromID($2, [$1, $3])
-    o 'Expression SYMBOL_CIRCUMFLEX Expression', -> new FunctionCallFromID($2, [$1, $3])
-    o 'Expression SYMBOL_TILDE Expression', -> new FunctionCallFromID($2, [$1, $3])
-    o 'Expression SYMBOL_LESS Expression', -> new FunctionCallFromID($2, [$1, $3])
-    o 'Expression SYMBOL_MORE Expression', -> new FunctionCallFromID($2, [$1, $3])
-    o 'Expression SYMBOL_EXCLAMATION Expression', -> new FunctionCallFromID($2, [$1, $3])
-    o 'Expression ! Expression', -> new FunctionCallFromID($2, [$1, $3])
-    o 'Expression SYMBOL_COLON Expression', -> new FunctionCallFromID($2, [$1, $3])
-    o 'Expression SYMBOL_MUL Expression', -> new FunctionCallFromID($2, [$1, $3])
-    o 'Expression SYMBOL_DIV Expression', -> new FunctionCallFromID($2, [$1, $3])
-    o 'Expression SYMBOL_PERCENT Expression', -> new FunctionCallFromID($2, [$1, $3])
-    o 'Expression SYMBOL_AMPERSAND Expression', -> new FunctionCallFromID($2, [$1, $3])
-    o 'Expression & Expression', -> new FunctionCallFromID($2, [$1, $3])
-    o 'Expression SYMBOL_PIPE Expression', -> new FunctionCallFromID($2, [$1, $3])
-    o 'Expression | Expression', -> new FunctionCallFromID($2, [$1, $3])
+    o 'UnaryOp'
+    o 'BinaryOp'
   ]
-
+  
+  Symbol: [
+    o 'ID'
+    o 'CAPID',
+  ]
+  
+  UnaryOp:
+    o("#{sym} Expression", (-> new FunctionCallFromID($1, [$2], unary: true)), prec: 'UNARY') \
+      for sym in ['SYMBOL_MINUS', 'SYMBOL_PLUS', 'SYMBOL_EXCLAMATION', '!', 'SYMBOL_TILDE']
+  
+  BinaryOp:
+    o("Expression #{sym} Expression", -> new FunctionCallFromID($2, [$1, $3])) for sym in [
+      'SYMBOL_EQUAL', 'SYMBOL_PLUS', 'SYMBOL_MINUS', 'SYMBOL_CIRCUMFLEX',
+      'SYMBOL_TILDE', 'SYMBOL_LESS', 'SYMBOL_MORE', 'SYMBOL_EXCLAMATION',
+      '!', 'SYMBOL_COLON', 'SYMBOL_MUL', 'SYMBOL_DIV', 'SYMBOL_PERCENT',
+      'SYMBOL_AMPERSAND', '&', 'SYMBOL_PIPE', '|'
+    ]
+  
   Literal: [
     o 'INTEGER', -> new Int($1)
     o 'FLOAT', -> new Float($1)
     o 'STRING', -> new String($1)
+    o 'Tuple', -> new Tuple($1)
   ]
 
   Tuple: [
-    o "( )", -> []
-    o "( Expression , TupleList )", -> [$2].concat($4)
+    o '( Expression , TupleList )', -> [$2].concat($4)
   ]
 
   TupleList: 
-    r 'Expression', name: 'TupleList', join: ','
+    r 'Expression', name: 'TupleList', join: ',', min: 1
 
   Type: [
-    o "CAPID", -> new Type($1)
-    o "TupleType"
-  ]
-  
-  TupleType: [
-    o "( TupleTypeList )", -> new TupleType($2)
+    o 'CAPID', -> new Type($1)
+    o '( TupleTypeList )', -> new TupleType($2)
   ]
   
   TupleTypeList: 
-    r 'Type', name: "TupleTypeList", min: 1, join: ','
+    r 'Type', name: 'TupleTypeList', min: 2, join: ','
 
   FunctionCall: [
     o 'ID ( )', -> new FunctionCall(new Symbol($1), [])
@@ -160,14 +142,14 @@ grammar =
   
 operators = [
   ['nonassoc',  'INDENT', 'DEDENT']
-  ["left", "SYMBOL_AMPERSAND", "&", "SYMBOL_PIPE", "|"]
+  ['left', 'SYMBOL_AMPERSAND', '&', 'SYMBOL_PIPE', '|']
   ['right', 'UNARY']
-  ["left", "SYMBOL_LESS", "SYMBOL_MORE"]
-  ["left", "SYMBOL_CIRCUMFLEX", "SYMBOL_TILDE"]
-  ["left", "SYMBOL_EQUAL", "SYMBOL_EXCLAMATION", "!"]
-  ["right", "SYMBOL_COLON"]
-  ["left", "SYMBOL_PLUS", "SYMBOL_MINUS"]
-  ["left", "SYMBOL_MUL", "SYMBOL_DIV", "SYMBOL_PERCENT"]
+  ['left', 'SYMBOL_LESS', 'SYMBOL_MORE']
+  ['left', 'SYMBOL_CIRCUMFLEX', 'SYMBOL_TILDE']
+  ['left', 'SYMBOL_EQUAL', 'SYMBOL_EXCLAMATION', '!']
+  ['right', 'SYMBOL_COLON']
+  ['left', 'SYMBOL_PLUS', 'SYMBOL_MINUS']
+  ['left', 'SYMBOL_MUL', 'SYMBOL_DIV', 'SYMBOL_PERCENT']
 ]
 
 exports.parser = new jison.Parser

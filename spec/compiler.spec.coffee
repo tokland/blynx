@@ -17,7 +17,6 @@ tests = [
   ['"hello there"', "hello there"]
   ['"hello \\"inner\\" there"', 'hello "inner" there']
   
-  ["()", []]
   ["(1, 2.5)", [1, 2.5]]
   ["(1, 2.5, 5)", [1, 2.5, 5]]
   
