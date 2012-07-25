@@ -125,6 +125,14 @@ tests = [
     f(x=1, z=1)
    """, should_throw("ArgumentError: argument 'z' not defined")]
   
+  # Paren expression
+
+  ["""
+    (~~)(x: Int, y: Int): Int = x
+    (%%)(x: Int, y: Int): Int = y
+    (1 ~~ 2) %% 3 
+   """, 3]
+  
   # Type signatures
   
   ["""

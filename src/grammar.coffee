@@ -86,6 +86,7 @@ grammar =
   ]
   
   InnerExpression: [
+    o '( Expression )', -> new ParenExpression($2)
     o 'ID', -> new Symbol($1)
     o 'CAPID', -> new Symbol($1)
     o 'FunctionCall'

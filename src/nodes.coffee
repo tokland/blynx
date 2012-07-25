@@ -100,8 +100,12 @@ class TupleType
 class Expression
   constructor: (@value) ->
   process: (env) -> @value.process(env)
-  type: (env) -> @process(env).type
   compile: (env) -> @value.compile(env)
+
+class ParenExpression
+  constructor: (@value) ->
+  process: (env) -> @value.process(env)
+  compile: (env) -> "(" + @value.compile(env) + ")"
 
 class Block
   constructor: (@nodes) ->
@@ -222,7 +226,7 @@ lib.exportClasses(exports, [
   Root
   SymbolBinding, FunctionBinding, TypedArgument, 
   Type, TupleType
-  Expression, Block, StatementExpression
+  Expression, ParenExpression, Block, StatementExpression
   Symbol, FunctionCall, FunctionArgument
   Int, Float, String
   Tuple
