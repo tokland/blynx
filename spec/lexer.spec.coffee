@@ -140,12 +140,6 @@ tests = [
   ["f(x: Int, y: Int): Float =", 
     "[ID f] ( [ID x] : [CAPID Int] , [ID y] : [CAPID Int] ) : [CAPID Float] ="]
   
-  ["f(!x: Int): Float |=", 
-    "[ID f] ( ! [ID x] : [CAPID Int] ) : [CAPID Float] |="]
-
-  ["f(&x: Int): Float &=", 
-    "[ID f] ( & [ID x] : [CAPID Int] ) : [CAPID Float] &="]
- 
   ["typed = 1",
     "[ID typed] = [INTEGER 1]"]
 
