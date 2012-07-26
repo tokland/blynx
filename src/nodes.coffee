@@ -19,7 +19,7 @@ translate_table =
   "&": "ampersand"
   "|": "pipe"
  
-translateFunctionName = (s) ->
+valid_varname = (s) ->
   ((if translate_table[c] then "__#{translate_table[c]}" else c) for c in s).join("") 
 
 exports.FunctionCallFromID = (name, args, options = {}) ->
@@ -43,7 +43,7 @@ class SymbolBinding
     type = @block.process(env).type
     {env: env.add_binding(@name, type), type}
   compile: (env) ->
-    name = translateFunctionName(@name)
+    name = valid_varname(@name)
     if lib.getClass(@block) == Expression
       "var #{name} = #{@block.compile(env)};"
     else
@@ -71,7 +71,7 @@ class FunctionBinding
     {env: new_env, type: result_type}
   compile: (env) -> 
     js_args = _(@args).pluck("name").join(', ')
-    fname = translateFunctionName(@name)
+    fname = valid_varname(@name)
     if lib.getClass(@block) == Block
       """
         var #{fname} = function(#{js_args}) {>>
@@ -130,7 +130,7 @@ class StatementExpression
 class Symbol
   constructor: (@name) ->
   process: (env) -> {env, type: env.get_binding(@name)}
-  compile: (env) -> translateFunctionName(@name)
+  compile: (env) -> valid_varname(@name)
 
 class FunctionArgument
   constructor: (@name, @value) ->
@@ -165,7 +165,7 @@ class FunctionCall
   compile: (env) ->
     key_to_index = _.mash([k, i] for [k, v], i in @name.process(env).type.fargs.types)
     sorted_args = _.sortBy(@args, (arg) -> parseInt(key_to_index[arg.name]))
-    translateFunctionName(@name.compile(env)) + 
+    valid_varname(@name.compile(env)) + 
       "(" + _(sorted_args).invoke("compile", env).join(', ') + ")"
 
 ## Literals
