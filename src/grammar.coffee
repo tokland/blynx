@@ -81,7 +81,7 @@ grammar =
   
   InnerExpression: [
     o '( Expression )', -> new ParenExpression($2)
-    o 'Symbol', -> new Symbol($1)
+    o 'Symbol'
     o 'FunctionCall'
     o 'Literal'
     o 'UnaryOp'
@@ -89,8 +89,9 @@ grammar =
   ]
   
   Symbol: [
-    o 'ID'
-    o 'CAPID',
+    o 'ID', -> new Symbol($1)
+    o 'CAPID', -> new Symbol($1)
+    o '( OpSymbol )', -> new Symbol($2)
   ]
   
   UnaryOp:

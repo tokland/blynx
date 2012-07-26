@@ -128,9 +128,9 @@ class StatementExpression
   compile: (env) -> "#{@value.compile(env)};"
   
 class Symbol
-  constructor: (@id_token) ->
-  process: (env) -> {env, type: env.get_binding(@id_token)}
-  compile: (env) -> @id_token
+  constructor: (@name) ->
+  process: (env) -> {env, type: env.get_binding(@name)}
+  compile: (env) -> translateFunctionName(@name)
 
 class FunctionArgument
   constructor: (@name, @value) ->
