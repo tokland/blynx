@@ -38,16 +38,17 @@ class Root
 ## Statements
 
 class SymbolBinding
-  constructor: (@id_token, @block) ->
+  constructor: (@name, @block) ->
   process: (env) -> 
     type = @block.process(env).type
-    {env: env.add_binding(@id_token, type), type}
+    {env: env.add_binding(@name, type), type}
   compile: (env) ->
+    name = translateFunctionName(@name)
     if lib.getClass(@block) == Expression
-      "var #{@id_token} = #{@block.compile(env)};"
+      "var #{name} = #{@block.compile(env)};"
     else
       """
-        var #{@id_token} = (function() {>>
+        var #{name} = (function() {>>
           #{@block.compile(env, return: true)}<<
         }).call(this);
       """

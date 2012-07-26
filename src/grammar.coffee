@@ -40,6 +40,7 @@ grammar =
   
   SymbolBinding: [
     o 'ID = BlockOrExpression', -> new SymbolBinding($1, $3)
+    o '( OpSymbol ) = BlockOrExpression', -> new SymbolBinding($2, $5)
   ]
   
   FunctionBinding: [
