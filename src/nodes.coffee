@@ -152,13 +152,13 @@ class FunctionCall
       if (repeated_key = _.first(repeated_keys))
         error("ArgumentError", "function call repeats argument '#{repeated_key}'")
     check_arguments_size = (function_args) =>
-      size = _.size(function_args.getTypes())
+      size = _.size(function_args.get_types())
       if _.size(@args) != size
         msg = "function '#{@name.compile(env)}' takes #{size} arguments but #{@args.length} given"
         error("ArgumentError", msg)
     match_types = (function_args, result) =>
       given_args = new types.NamedTuple([a.name, a.process(env).type] for a in @args)
-      merged = types.mergeNamedTuples(function_args, given_args)
+      merged = function_args.merge(given_args)
       namespace = types.match_types(function_args, merged) or
         error("TypeError", "function '#{function_type}', called with arguments '#{merged}'")
       types.join_types(result, namespace)
