@@ -232,6 +232,13 @@ class TypeConstructorDefinition
 
 ##
 
+class Comment
+  constructor: (@text) ->
+  process: (env) -> {env}
+  compile: (env) -> "// #{@text}"
+
+##
+
 lib.exportClasses(exports, [
   Root
   SymbolBinding, FunctionBinding, 
@@ -241,6 +248,7 @@ lib.exportClasses(exports, [
   FunctionCall, FunctionArgument
   Int, Float, String, Tuple
   TypeDefinition, TypeConstructorDefinition
+  Comment
 ])
 
 exports.node = (class_name, args...) ->

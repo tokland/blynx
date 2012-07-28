@@ -11,7 +11,7 @@ should_have_bindings = (bindings) ->
   
 tests = [
   ["", undefined]
-
+  
   # Pre-defined types
 
   ["x = 1", should_have_bindings(x: "Int")]
@@ -255,6 +255,16 @@ tests = [
       (~~) = (!!)
       1 ~~ 2
     """, 2]
+    
+  # Comments
+
+  ["""
+    # this is a comment
+    x = 1
+    # another comment
+    y = 2
+    # yet another comment
+  """, should_have_bindings(x: "Int", y: "Int")]
 ]
 
 describe "compiler", ->

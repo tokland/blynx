@@ -11,6 +11,7 @@ grammar =
     r 'Line', name: 'Lines', min: 1
 
   Line: [
+    o 'COMMENT TERMINATOR', -> new Comment($1)
     o 'Statement TERMINATOR'
     o 'Expression TERMINATOR', -> new StatementExpression($1)
     o 'TERMINATOR'
