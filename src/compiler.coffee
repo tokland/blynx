@@ -14,9 +14,9 @@ class Environment
   constructor: (@bindings, @types, @function = []) ->
   inspect: ->
     bindings = ("    #{k}: #{v}" for k, v of @bindings).join("\n")
-    "Environment:\n" + 
+    "---\nEnvironment:\n" + 
       "  Types: " + _.keys(@types).join(", ") + "\n" + 
-      "  Bindings: " + (if _(@bindings).isEmpty() then "none" else "\n"+bindings) + "\n"
+      "  Bindings: " + (if _(@bindings).isEmpty() then "none" else "\n"+bindings) + "\n---"
   add_binding: (name, type, options = {}) ->
     if @bindings[name]
       msg = options.error_msg or "symbol '#{name}' already bound to type '#{@bindings[name]}'"  

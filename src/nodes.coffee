@@ -64,9 +64,10 @@ class FunctionBinding
         error_msg: "argument '#{arg.name}' already defined in function binding")
     block_type = @block.process(block_env).type
     result_type = @result_type.process(env).type
-    if not types.match_types(result_type, block_type)
-      error("TypeError",
-        "function '#{@name}' should return '#{result_type}' but returns '#{block_type}'")
+    #debug("match_types:", result_type, "-", block_type, "-->", namespace)
+    unless namespace = types.match_types(result_type, block_type)
+      msg = "function '#{@name}' should return '#{result_type}' but returns '#{block_type}'"
+      error("TypeError", msg)
     new_env = env.add_function_binding(@name, @args, result_type)
     {env: new_env, type: result_type}
   compile: (env) -> 

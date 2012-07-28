@@ -70,9 +70,13 @@ exports.buildType = buildType = (name, arity) ->
 ## Auxiliar functions
 
 exports.join_types = (base_type, namespace_pairs) ->
+  #console.log("join_types", base_type, namespace_pairs)
   namespace = _.mash([tv.name, type] for [tv, type] in namespace_pairs)
-  new_args = ((namespace[tv.name] or tv) for tv in base_type.args)
-  new base_type.constructor(new_args)
+  if base_type.variable
+    namespace[base_type] or base_type
+  else
+    new_args = ((namespace[tv.name] or tv) for tv in base_type.args)
+    new base_type.constructor(new_args)
 
 exports.match_types = match_types = (expected, given) ->
   if expected.variable and not given.variable
