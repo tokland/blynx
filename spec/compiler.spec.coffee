@@ -3,7 +3,11 @@ assert = require 'assert'
 grammar = require 'grammar'
 compiler = require 'compiler'
 
-should_throw = (name) -> {_should_throw: name}
+should_throw = (error_string) -> 
+  {_should_throw: true, error_string: error_string}
+  
+should_have_binding = (name, type_string) -> 
+  {_should_have_binding: true, type_string: type_string, name: name}
   
 tests = [
   ["", undefined]
@@ -153,6 +157,15 @@ tests = [
     f(x: (Int, Float)): (Int, Float) = x 
     f((1, 2.34))
   """, [1, 2.34]]
+
+  ["""
+    type Either(a, b) = Left(value: a) | Right(error: b)
+
+    f(x: Int): Either(Int, b) = 
+      Left(4)
+      
+    res = f(1)
+  """, should_have_binding("res", "Either(Int, b)")]
   
   # Infix operators
   
@@ -241,16 +254,32 @@ tests = [
     type Shape = Square(side: Int) | Circle
     Square(1.23)
   """, should_throw("TypeError: function '(side: Int) -> Shape', called with arguments '(side: Float)'")]
+
+  # ADT with type arguments
+  
+  ["""
+    type Either(a, b) = Left(value: a) | Right(error: b)
+    left = Left(1)
+  """, should_have_binding("left", "Either(Int, b)")]
 ]
 
 describe "compiler", ->
   for test in tests
     [source, expected] = test
     do (source, expected) ->
-      if typeof expected == "object" and (msg = expected._should_throw)
-        it "should throw exception:\n\n#{source}", ->
-          (-> compiler.compile(source, skip_prelude: true)).
-            should.throw(msg, "Failed on #{source}")
+      if typeof expected == "object" 
+        if expected._should_throw
+          msg = expected.error_string
+          it "should throw exception:\n\n#{source}", ->
+            (-> compiler.compile(source, skip_prelude: true)).
+              should.throw(msg, "Failed on #{source}")
+        else if expected._should_have_binding
+          expected_type_string = expected.type_string
+          name = expected.name
+          it "should have type '#{expected_type_string}'", ->
+            {env} = compiler.compile(source, skip_prelude: true)
+            type_string = env.get_binding(name).inspect()
+            assert.deepEqual(type_string, expected_type_string, "Failed on #{source}")
       else
         it "should compile:\n\n#{source}", ->
           output = compiler.run(source, skip_prelude: true)

@@ -27,7 +27,15 @@ grammar =
   ]
   
   TypeDefinition: [
-    o 'TYPE CAPID = TypeConstructorList', -> new TypeDefinition($2, $4)
+    o 'TYPE CAPID = TypeConstructorList', -> new TypeDefinition($2, [], $4)
+    o 'TYPE CAPID ( TypeArguments ) = TypeConstructorList', -> new TypeDefinition($2, $4, $7)
+  ]
+  
+  TypeArguments:
+    r 'TypeVariable', name: "TypeArguments", min: 1, join: ','
+  
+  TypeVariable: [
+    o 'ID', -> new TypeVariable($1)
   ]
 
   TypeConstructorList:
@@ -121,9 +129,14 @@ grammar =
     r 'Expression', name: 'TupleList', join: ',', min: 1
 
   Type: [
-    o 'CAPID', -> new Type($1)
+    o 'CAPID', -> new Type($1, [])
+    o 'CAPID ( TypeList )', -> new Type($1, $3)
     o '( TupleTypeList )', -> new TupleType($2)
+    o 'TypeVariable'
   ]
+  
+  TypeList:
+    r 'Type', name: 'TypeList', min: 1, join: ','
   
   TupleTypeList: 
     r 'Type', name: 'TupleTypeList', min: 2, join: ','

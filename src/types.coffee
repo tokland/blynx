@@ -6,9 +6,11 @@ lib = require './lib'
 class TypeBase
   @inspect: -> constructor.name
   @toString: -> @inspect()
-  constructor: -> @classname = @constructor.name
+  constructor: (args) ->
+    @args = args
+    @classname = @constructor.name
   inspect: -> @toString()
-  getTypes: -> [this]
+  getTypes: -> [this] # this -> scalar
 
 class Scalar extends TypeBase
   scalar: true
@@ -16,6 +18,17 @@ class Scalar extends TypeBase
 
 class Composed extends TypeBase
   scalar: false
+
+# Variable
+  
+class Variable
+  variable: true
+  constructor: (@name) -> @classname = @constructor.name 
+  toString: -> @name 
+  @inspect: -> constructor.name
+  @toString: -> @inspect()
+  inspect: -> @toString()
+  getTypes: -> [this]
 
 ## Scalar
   
@@ -32,8 +45,7 @@ class Tuple extends Composed
   toString: -> "(" + _(@types).invoke("toString").join(", ") + ")"
   getTypes: -> @types
 
-class NamedTuple extends Composed
-  constructor: (@types) -> super()
+class NamedTuple extends Tuple
   toString: -> "(" + ("#{k or '_'}: #{v}" for [k, v] in @types).join(", ") + ")"
   getTypes: -> (v for [k, v] in @types)
 
@@ -53,20 +65,39 @@ class Function extends Composed
 
 ## ADT
 
-exports.buildType = (name) ->
+exports.buildType = buildType = (name, arity) ->
   class UserType extends Scalar
-    toString: -> name
-  
+    constructor: (args) ->
+      if args.length != @arity
+        msg = "type '#{@.inspect()}' has arity #{@arity}, but #{args.length} arguments given"
+        error("InternalError", msg)
+      super
+    name: name
+    arity: arity
+    toString: -> lib.optionalParens(name, @args)
+    args: @args
+
 ##
 
-exports.isSameType = isSameType = (expected, given) ->
-  if expected.classname == given.classname
+exports.join_types = (base_type, namespace_pairs) ->
+  namespace = _.mash([tv.name, type] for [tv, type] in namespace_pairs)
+  new_args = ((namespace[tv.name] or tv) for tv in base_type.args)
+  new base_type.constructor(new_args)
+
+exports.match_types = match_types = (expected, given) ->
+  if expected.variable and not given.variable
+    [[expected, given]]
+  else if expected.classname == given.classname
     if given.scalar
-      true
+      []
     else
       pairs = _.zip(expected.getTypes(), given.getTypes())
-      _.all(pairs, ([e, g]) -> isSameType(e, g))
+      namespace = (match_types(e, g) for [e, g] in pairs)
+      if _.all(namespace, _.identity) then _.flatten1(namespace) else false 
   else
     false
-   
-lib.exportClasses(exports, [Int, Float, String, Tuple, NamedTuple, Function])
+
+##
+
+lib.exportClasses(exports, 
+  [Int, Float, String, Tuple, NamedTuple, Function, Variable])

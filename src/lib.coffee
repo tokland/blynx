@@ -16,17 +16,9 @@ exports.exportClasses  = (_exports, klasses) ->
 # Lexer
 
 exports.simpleTokens = (tokens) ->
-  _(tokens).map((token) ->
-    [k, s, line] = token
-    #if k == "INDENT"
-    if s && k != s then "[#{k} #{s}]" else k
+  _(tokens).map(([name, string, line_number]) ->
+    if string && name != string then "[#{name} #{string}]" else name
   ).join(" ")
-
-# Types
-
-exports.zipEqType = (array1, array2) ->
-  (array1.length == array2.length) &&
-    _.all(_(array1).zip(array2), ([a1, a2]) -> a1.eqType(a2))
 
 # Grammar
 
@@ -49,36 +41,27 @@ exports.recursiveGrammarItem = (rule, options = {}) ->
   rule_list = options.name
   _.compact([
     (o("", -> []) if options.min == 0)
-    o(rule, -> [$1])
-    if join then o("#{rule_list} #{join} #{rule}", -> $1.concat($3)) else 
-                 o("#{rule_list} #{rule}", -> $1.concat($2))
+    (o(rule, -> [$1]) if options.min <= 1)
+    if join then o("#{rule_list} #{join} #{rule}", -> $1.concat($3)) \
+            else o("#{rule_list} #{rule}", -> $1.concat($2))
   ])
 
 # Nodes
-
-exports.getTypes = (values, env) ->
-  types = for value in values
-    {env, type} = value.process(env)
-    type
-  {env, types}
 
 exports.indent = (source) -> 
   _(source.split(/\n/)).freduce({indent: 0, output: []}, (state, original_line) ->
     indentation = _.repeat("  ", state.indent).join("")
     line = indentation + original_line.trim().replace(/(>>|<<)\s*$/, '')
-    new_indent = if original_line.match(">>\s*$")
-      state.indent + 1
-    else if original_line.match("<<\s*$")
-      state.indent - 1
-    else 
-      state.indent
-      
-    _(state).merge
-      indent: new_indent
-      output: (state.output.push(line); state.output)
+    indent_increment = if original_line.match(">>\s*$") then +1
+    else if original_line.match("<<\s*$") then -1
+    else 0
+    new_indent = state.indent + indent_increment
+    state.output.push(line)
+    _(state).update(indent: new_indent, output: state.output)
   ).output.join("\n")
   
-exports.getClass = (obj) -> obj.constructor
+exports.getClass = (obj) -> 
+  obj.constructor
 
 exports.optionalParens = (name, args) ->
-  name + (if _(args).isNotEmpty() then "(" + args.join(', ') + ")" else "")
+  name + (if _(args).isNotEmpty() then "(#{args.join(', ')})" else "")

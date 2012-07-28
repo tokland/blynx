@@ -26,6 +26,8 @@ class Environment
   get_binding: (name) ->
     @bindings[name] or
       error("NameError", "undefined symbol '#{name}'")
+  get_types_from_nodes: (nodes) ->
+    (node.process(this).type for node in nodes)
   add_type: (name, type) ->
     @types[name] and
       error("TypeError", "type '#{name}' already defined")
@@ -70,9 +72,9 @@ exports.compile = compile = (source, options = {}) ->
   env = new Environment({}, basic_types)
   {env: final_env, output} = getAST(source, options).compile_with_process(env)
   process.stderr.write(final_env.inspect()+"\n") if options.debug 
-  output + "\n"
+  {env: final_env, output: output + "\n"}
   
 exports.run = (source, options = {}) ->
-  output = compile(source, options)
+  output = compile(source, options).output
   sandbox = {api: require('./api'), console: console}
   vm.runInNewContext(output, sandbox)

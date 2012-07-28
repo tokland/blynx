@@ -41,11 +41,11 @@ for source_path in args
     util.print(lib.simpleTokens(tokens) + "\n")
     process.exit(0)
   else if options.print
-    output = compile(source, options)
+    output = compile(source, options).output
     util.print(output)
     process.exit(0)
   else if options.compile
-    output = compile(source, options)
+    output = compile(source, options).output
     jspath = source_path.replace(/\.\w+/, '.js')
     fs.writeFileSync(jspath, output, "utf8")
     debug("Written to file: #{jspath}")

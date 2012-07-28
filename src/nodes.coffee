@@ -64,7 +64,7 @@ class FunctionBinding
         error_msg: "argument '#{arg.name}' already defined in function binding")
     block_type = @block.process(block_env).type
     result_type = @result_type.process(env).type
-    if not types.isSameType(result_type, block_type)
+    if not types.match_types(result_type, block_type)
       error("TypeError",
         "function '#{@name}' should return '#{result_type}' but returns '#{block_type}'")
     new_env = env.add_function_binding(@name, @args, result_type)
@@ -86,15 +86,21 @@ class TypedArgument
   process: (env) -> {env, type: @type.process(env).type}
 
 class Type
+  constructor: (@name, @args) ->
+  process: (env) ->
+    type_args = env.get_types_from_nodes(@args)
+    type = env.get_type(@name)
+    {env, type: new type(type_args)}
+
+class TypeVariable
   constructor: (@name) ->
-  process: (env) -> 
-    {env, type: new(env.get_type(@name))}
+  process: (env) -> {env, type: new types.Variable(@name)}
 
 class TupleType
   constructor: (@types) ->
   process: (env) ->
-    type = new types.Tuple(lib.getTypes(@types, env).types)
-    {env, type: type}
+    tuple_args = env.get_types_from_nodes(@types)
+    {env, type: new types.Tuple(tuple_args)}
 
 ## Expressions
 
@@ -140,28 +146,29 @@ class FunctionArgument
 class FunctionCall
   constructor: (@name, @args) ->
   process: (env) ->
-    function_type = @name.process(env).type
-    expected_args = function_type.fargs
-    check_arguments_size = =>
-      size = _.size(expected_args.getTypes())
-      if _.size(@args) != size
-        msg = "function '#{@name.compile(env)}' takes #{size} arguments but #{@args.length} given"
-        error("ArgumentError", msg)
     check_repeated_arguments = =>       
       keys = (arg.name for arg in @args)
       repeated_keys = (k for k, ks of _.groupBy(keys, _.identity) when k and ks.length > 1)
       if (repeated_key = _.first(repeated_keys))
         error("ArgumentError", "function call repeats argument '#{repeated_key}'")
-    match_types = =>
+    check_arguments_size = (function_args) =>
+      size = _.size(function_args.getTypes())
+      if _.size(@args) != size
+        msg = "function '#{@name.compile(env)}' takes #{size} arguments but #{@args.length} given"
+        error("ArgumentError", msg)
+    match_types = (function_args, result) =>
       given_args = new types.NamedTuple([a.name, a.process(env).type] for a in @args)
-      merged = types.mergeNamedTuples(expected_args, given_args)
-      if not types.isSameType(expected_args, merged)
+      merged = types.mergeNamedTuples(function_args, given_args)
+      namespace = types.match_types(function_args, merged) or
         error("TypeError", "function '#{function_type}', called with arguments '#{merged}'")
+      types.join_types(result, namespace)
         
-    check_arguments_size()
     check_repeated_arguments()
-    match_types()
-    {env, type: function_type.result}
+    function_type = @name.process(env).type
+    function_args = function_type.fargs
+    check_arguments_size(function_args)
+    type = match_types(function_args, function_type.result)
+    {env, type}
   compile: (env) ->
     key_to_index = _.mash([k, i] for [k, v], i in @name.process(env).type.fargs.types)
     sorted_args = _.sortBy(@args, (arg) -> parseInt(key_to_index[arg.name]))
@@ -188,20 +195,22 @@ class String
 class Tuple
   constructor: (@values) ->
   process: (env) ->
-    {env, type: new env.types.Tuple(lib.getTypes(@values, env).types)}
+    args = env.get_types_from_nodes(@values)
+    {env, type: new env.types.Tuple(args)}
   compile: (env) ->
     "[" + _(@values).invoke("compile", env).join(", ") + "]" 
 
 ##
 
 class TypeDefinition
-  constructor: (@name, @constructors) ->
+  constructor: (@name, @args, @constructors) ->
   process: (env) ->
-    type = types.buildType(@name)
+    args = env.get_types_from_nodes(@args)
+    type = types.buildType(@name, @args.length)
     env_with_type = env.add_type(@name, type)
     new_env = _.freduce @constructors, env_with_type, (e, constructor) ->
-      constructor.add_binding(e, type)
-    {env: new_env, type: new type}
+      constructor.add_binding(e, type, args)
+    {env: new_env}
   compile: (env) ->
     "// type #{@name}\n" +
       _(@constructors).invoke("compile", env).join("\n") + "\n"
@@ -215,22 +224,22 @@ class TypeConstructorDefinition
       names = _(@args).pluck("name")
       val = "{" + ("#{JSON.stringify(n)}: #{n}" for n in names) + "}"
       "var #{@name} = function(#{names.join(', ')}) { return #{val}; };"
-  add_binding: (env, type) ->
+  add_binding: (env, type, type_args) ->
     binding_type = if _(@args).isEmpty()
-      env.add_binding(@name, new type) 
+      env.add_binding(@name, new type([])) 
     else
-      env.add_function_binding(@name, @args, new type)
+      env.add_function_binding(@name, @args, new type(type_args))
 
 ##
 
 lib.exportClasses(exports, [
   Root
-  SymbolBinding, FunctionBinding, TypedArgument, 
-  Type, TupleType
+  SymbolBinding, FunctionBinding, 
+  TypedArgument, Type, TypeVariable, TupleType
   Expression, ParenExpression, Block, StatementExpression
-  Symbol, FunctionCall, FunctionArgument
-  Int, Float, String
-  Tuple
+  Symbol, 
+  FunctionCall, FunctionArgument
+  Int, Float, String, Tuple
   TypeDefinition, TypeConstructorDefinition
 ])
 
