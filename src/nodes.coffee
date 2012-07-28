@@ -165,12 +165,12 @@ class FunctionCall
         
     check_repeated_arguments()
     function_type = @name.process(env).type
-    function_args = function_type.fargs
+    function_args = function_type.args
     check_arguments_size(function_args)
     type = match_types(function_args, function_type.result)
     {env, type}
   compile: (env) ->
-    key_to_index = _.mash([k, i] for [k, v], i in @name.process(env).type.fargs.types)
+    key_to_index = _.mash([k, i] for [k, v], i in @name.process(env).type.args.args)
     sorted_args = _.sortBy(@args, (arg) -> parseInt(key_to_index[arg.name]))
     valid_varname(@name.compile(env)) + 
       "(" + _(sorted_args).invoke("compile", env).join(', ') + ")"

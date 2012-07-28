@@ -42,7 +42,7 @@ class Environment
     function_type = new types.Function(args_type, result_type)
     @add_binding(name, function_type)
 
-## Functions
+##
 
 getParser = (options) ->
   _(grammar.parser).merge

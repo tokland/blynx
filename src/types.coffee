@@ -4,80 +4,70 @@ lib = require './lib'
 {debug, error} = lib
 
 class TypeBase
-  @inspect: -> constructor.name
-  @toString: -> @inspect()
   constructor: (args) ->
     @args = args
     @classname = @constructor.name
-  inspect: -> @toString()
-  getTypes: -> [this] # this -> scalar
-
-class Scalar extends TypeBase
-  scalar: true
   toString: -> @classname
-
-class Composed extends TypeBase
-  scalar: false
-
-# Variable
-  
-class Variable
-  variable: true
-  constructor: (@name) -> @classname = @constructor.name 
-  toString: -> @name 
+  inspect: -> @toString()
+  getTypes: -> this
   @inspect: -> constructor.name
   @toString: -> @inspect()
+
+class Variable
+  variable: true
+  constructor: (@name) -> 
+  toString: -> @name 
   inspect: -> @toString()
-  getTypes: -> [this]
+  getTypes: -> this
 
-## Scalar
+## Basic
   
-class Int extends Scalar
+class Int extends TypeBase
 
-class Float extends Scalar
+class Float extends TypeBase
 
-class String extends Scalar
+class String extends TypeBase
 
-## Composed 
+## Tuple 
 
-class Tuple extends Composed
-  constructor: (@types) -> super()
-  toString: -> "(" + _(@types).invoke("toString").join(", ") + ")"
-  getTypes: -> @types
+class Tuple extends TypeBase
+  toString: -> "(" + (t.toString() for t in @args).join(", ") + ")"
+  getTypes: -> @args
 
-class NamedTuple extends Tuple
-  toString: -> "(" + ("#{k or '_'}: #{v}" for [k, v] in @types).join(", ") + ")"
-  getTypes: -> (v for [k, v] in @types)
+class NamedTuple extends TypeBase
+  toString: -> "(" + (((if k then "#{k}: " else "") + t) for [k, t] in @args).join(", ") + ")"
+  getTypes: -> (v for [k, v] in @args)
 
-exports.mergeNamedTuples = (base, given) ->
-  index_to_key = _.mash([i, k] for [k, v], i in base.types)
-  key_to_index = _.mash([k, i] for i, k of index_to_key)
-  if (key = _.first(key for [key, type] in given.types when key not of key_to_index))
-    error("ArgumentError", "argument '#{key}' not defined")
-  indexed_pairs = _.map given.types, ([given_key, type], idx) ->
-    key = given_key or index_to_key[idx]
-    {position: parseInt(key_to_index[key]), pair: [key, type]}
-  new NamedTuple(o.pair for o in _.sortBy(indexed_pairs, (o) -> o.position))
+# Function
 
-class Function extends Composed
-  constructor: (@fargs, @result) -> super()
-  toString: -> "#{@fargs.toString()} -> #{@result.toString()}"
+class Function extends TypeBase
+  constructor: (@args, @result) -> super
+  toString: -> "#{@args.toString()} -> #{@result.toString()}"
 
 ## ADT
 
 exports.buildType = buildType = (name, arity) ->
-  class UserType extends Scalar
+  class UserType extends TypeBase
     constructor: (args) ->
       if args.length != @arity
-        msg = "type '#{@.inspect()}' has arity #{@arity}, but #{args.length} arguments given"
+        msg = "type '#{this.inspect()}' has arity #{@arity} but #{args.length} arguments given"
         error("InternalError", msg)
       super
     name: name
     arity: arity
     toString: -> lib.optionalParens(name, @args)
-    args: @args
 
-##
+## Auxiliar functions
+
+exports.mergeNamedTuples = (base, given) ->
+  index_to_key = _.mash([i, k] for [k, v], i in base.args)
+  key_to_index = _.mash([k, i] for i, k of index_to_key)
+  if (key = _.first(key for [key, type] in given.args when key not of key_to_index))
+    error("ArgumentError", "argument '#{key}' not defined")
+  indexed_pairs = _.map given.args, ([given_key, type], idx) ->
+    key = given_key or index_to_key[idx]
+    {position: parseInt(key_to_index[key]), pair: [key, type]}
+  new NamedTuple(o.pair for o in _.sortBy(indexed_pairs, (o) -> o.position))
 
 exports.join_types = (base_type, namespace_pairs) ->
   namespace = _.mash([tv.name, type] for [tv, type] in namespace_pairs)
@@ -88,12 +78,13 @@ exports.match_types = match_types = (expected, given) ->
   if expected.variable and not given.variable
     [[expected, given]]
   else if expected.classname == given.classname
-    if given.scalar
-      []
+    expected_types = expected.getTypes()
+    given_types = given.getTypes()
+    if expected_types.constructor.name == "Array"
+      namespace = (match_types(e, g) for [e, g] in _.zip(expected_types, given_types))
+      if _.all(namespace, _.identity) then _.flatten1(namespace) else false
     else
-      pairs = _.zip(expected.getTypes(), given.getTypes())
-      namespace = (match_types(e, g) for [e, g] in pairs)
-      if _.all(namespace, _.identity) then _.flatten1(namespace) else false 
+      []
   else
     false
 

@@ -4,10 +4,10 @@ grammar = require 'grammar'
 compiler = require 'compiler'
 
 should_throw = (error_string) -> 
-  {_should_throw: true, error_string: error_string}
+  {_should_throw: true, error_string}
   
-should_have_binding = (name, type_string) -> 
-  {_should_have_binding: true, type_string: type_string, name: name}
+should_have_bindings = (bindings) -> 
+  {_should_have_bindings: true, bindings}
   
 tests = [
   ["", undefined]
@@ -15,14 +15,57 @@ tests = [
   # Pre-defined types
 
   ["1", 1]
+  ["x = 1", should_have_bindings(x: "Int")]
   
   ["1.23", 1.23]
+  ["x = 1.23", should_have_bindings(x: "Float")]
   
   ['"hello there"', "hello there"]
   ['"hello \\"inner\\" there"', 'hello "inner" there']
+  ["x = \"hello\"", should_have_bindings(x: "String")]
   
   ["(1, 2.5)", [1, 2.5]]
   ["(1, 2.5, 5)", [1, 2.5, 5]]
+  ["t = (1, 1.23, \"hello\")", should_have_bindings(t: "(Int, Float, String)")]
+
+  # ADT
+
+  ["""
+    type Bool = True | False
+    x = True
+    y = False
+  """, should_have_bindings(x: "Bool", y: "Bool")]
+
+  ["""
+    type Bool = True | False
+    type Bool = AnotherTrue | AnotherFalse
+  """, should_throw("TypeError: type 'Bool' already defined")]
+
+  ["""
+    type Bool = True | False
+    type AnotherBool = AnotherTrue | False
+  """, should_throw("BindingError: symbol 'False' already bound to type 'Bool'")]
+
+  # ADT with arguments
+  
+  ["""
+    type Form = Square(side: Int) | Point
+    square = Square(5)
+    point = Point
+  """, should_have_bindings(square: "Form", point: "Form")]
+
+  ["""
+    type Shape = Square(side: Int) | Circle
+    Square(1.23)
+  """, should_throw("TypeError: function '(side: Int) -> Shape', called with arguments '(side: Float)'")]
+
+  # ADT with type arguments
+  
+  ["""
+    type Either(a, b) = Left(value: a) | Right(error: b)
+    left = Left(1)
+    right = Right(1.23)
+  """, should_have_bindings(left: "Either(Int, b)"), right: "Either(a, Float)"]
   
   # Symbol bindings
   
@@ -165,7 +208,7 @@ tests = [
       Left(4)
       
     res = f(1)
-  """, should_have_binding("res", "Either(Int, b)")]
+  """, should_have_bindings(res: "Either(Int, b)")]
   
   # Infix operators
   
@@ -223,44 +266,6 @@ tests = [
       (~~) = (!!)
       1 ~~ 2
     """, 2]
-   
-  # ADT
-
-  ["""
-    type Bool = True | False
-    f(x: Bool, y: Bool): Int = 1
-    f(True, False)
-  """, 1]
-
-  ["""
-    type Bool = True | False
-    type Bool = AnotherTrue | AnotherFalse
-  """, should_throw("TypeError: type 'Bool' already defined")]
-
-  ["""
-    type Bool = True | False
-    type AnotherBool = AnotherTrue | False
-  """, should_throw("BindingError: symbol 'False' already bound to type 'Bool'")]
-
-  # ADT with arguments
-  
-  ["""
-    type Shape = Square(side: Int) | Circle
-    f(x: Shape, y: Shape): Int = 1
-    f(Square(5), Circle)
-  """, 1]
-
-  ["""
-    type Shape = Square(side: Int) | Circle
-    Square(1.23)
-  """, should_throw("TypeError: function '(side: Int) -> Shape', called with arguments '(side: Float)'")]
-
-  # ADT with type arguments
-  
-  ["""
-    type Either(a, b) = Left(value: a) | Right(error: b)
-    left = Left(1)
-  """, should_have_binding("left", "Either(Int, b)")]
 ]
 
 describe "compiler", ->
@@ -273,13 +278,14 @@ describe "compiler", ->
           it "should throw exception:\n\n#{source}", ->
             (-> compiler.compile(source, skip_prelude: true)).
               should.throw(msg, "Failed on #{source}")
-        else if expected._should_have_binding
-          expected_type_string = expected.type_string
-          name = expected.name
-          it "should have type '#{expected_type_string}'", ->
-            {env} = compiler.compile(source, skip_prelude: true)
-            type_string = env.get_binding(name).inspect()
-            assert.deepEqual(type_string, expected_type_string, "Failed on #{source}")
+        else if expected._should_have_bindings
+          bindings = expected.bindings
+          {env} = compiler.compile(source, skip_prelude: true)
+          for name, expected_type_string of bindings
+            do(name, expected_type_string) -> 
+              it "'#{name}' should have type '#{expected_type_string}'", ->
+                type_string = env.get_binding(name).inspect()
+                assert.deepEqual(type_string, expected_type_string, "Failed on:\n#{source}")
       else
         it "should compile:\n\n#{source}", ->
           output = compiler.run(source, skip_prelude: true)
