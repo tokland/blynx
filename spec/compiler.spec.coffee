@@ -14,19 +14,10 @@ tests = [
 
   # Pre-defined types
 
-  ["1", 1]
   ["x = 1", should_have_bindings(x: "Int")]
-  
-  ["1.23", 1.23]
   ["x = 1.23", should_have_bindings(x: "Float")]
-  
-  ['"hello there"', "hello there"]
-  ['"hello \\"inner\\" there"', 'hello "inner" there']
-  ["x = \"hello\"", should_have_bindings(x: "String")]
-  
-  ["(1, 2.5)", [1, 2.5]]
-  ["(1, 2.5, 5)", [1, 2.5, 5]]
-  ["t = (1, 1.23, \"hello\")", should_have_bindings(t: "(Int, Float, String)")]
+  ['x = "hello"', should_have_bindings(x: "String")]
+  ['x = (1, 1.23, "hello")', should_have_bindings(x: "(Int, Float, String)")]
 
   # ADT
 
@@ -49,15 +40,15 @@ tests = [
   # ADT with arguments
   
   ["""
-    type Form = Square(side: Int) | Point
+    type Entity = Square(side: Int) | Point
     square = Square(5)
     point = Point
-  """, should_have_bindings(square: "Form", point: "Form")]
+  """, should_have_bindings(square: "Entity", point: "Entity")]
 
   ["""
-    type Shape = Square(side: Int) | Circle
+    type Entity = Square(side: Int) | Point
     Square(1.23)
-  """, should_throw("TypeError: function '(side: Int) -> Shape', called with arguments '(side: Float)'")]
+  """, should_throw("TypeError: function '(side: Int) -> Entity', called with arguments '(side: Float)'")]
 
   # ADT with type arguments
   
@@ -71,16 +62,14 @@ tests = [
   
   ["""
     x = 1
-    x
-   """, 1]
+   """, should_have_bindings(x: "Int")]
 
   ["""
     x =
       1
-      y = 2
+      y = 2.3
       y
-    x
-   """, 2]
+   """, should_have_bindings(x: "Float")]
 
   ["x", should_throw("NameError: undefined symbol 'x'")]
 
