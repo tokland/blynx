@@ -56,6 +56,8 @@ class NamedTuple extends TypeBase
 class Function extends TypeBase
   constructor: (@args, @result) -> super
   toString: -> "#{@args.toString()} -> #{@result.toString()}"
+  get_types: -> [@args, @result]
+  join: (namespace) -> new Function(@args.join(namespace), @result.join(namespace))
 
 ## ADT
 
@@ -81,7 +83,7 @@ exports.match_types = match_types = (expected, given) ->
     if expected_types.constructor.name == "Array"
       namespaces = (match_types(e, g) for [e, g] in _.zip(expected_types, given_types))
       if _.all(namespaces, _.identity)
-        _.freduce(namespaces, {}, _.merge)
+        _.freduce namespaces, {}, (acc, namespace) -> _.merge(acc, namespace)
       else
         false
     else

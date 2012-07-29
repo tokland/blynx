@@ -66,9 +66,10 @@ class FunctionBinding
     block_env = @get_block_env(env)
     block_type = @block.process(block_env).type
     result_type = @result_type.process(env).type
-    unless namespace = types.match_types(result_type, block_type)
+    unless namespace = types.match_types(block_type, result_type)
       msg = "function '#{@name}' should return '#{result_type}' but returns '#{block_type}'"
       error("TypeError", msg)
+    debug("namespace:", namespace)
     new_env = env.add_function_binding(@name, @args, result_type)
     {env: new_env, type: result_type}
   compile: (env) -> 
@@ -176,6 +177,7 @@ class FunctionCall
       merged = function_args.merge(given_args)
       namespace = types.match_types(function_args, merged) or
         error("TypeError", "function '#{function_type}', called with arguments '#{merged}'")
+      debug("call", namespace)
       result.join(namespace)
 
     function_type = @name.process(env).type
