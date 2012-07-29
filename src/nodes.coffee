@@ -58,29 +58,31 @@ class SymbolBinding
 class FunctionBinding
   constructor: (name, @args, @result_type, @block, options = {}) ->
     @name = if options.unary then "#{name}_unary" else name
-  process: (env) ->
+  get_block_env: (env) ->
     block_env = _.freduce @args, env, (block_env, arg) ->
       block_env.add_binding(arg.name, arg.process(env).type, 
         error_msg: "argument '#{arg.name}' already defined in function binding")
+  process: (env) ->
+    block_env = @get_block_env(env)
     block_type = @block.process(block_env).type
     result_type = @result_type.process(env).type
-    #debug("match_types:", result_type, "-", block_type, "-->", namespace)
     unless namespace = types.match_types(result_type, block_type)
       msg = "function '#{@name}' should return '#{result_type}' but returns '#{block_type}'"
       error("TypeError", msg)
     new_env = env.add_function_binding(@name, @args, result_type)
     {env: new_env, type: result_type}
   compile: (env) -> 
+    block_env = @get_block_env(env)
     js_args = _(@args).pluck("name").join(', ')
     fname = valid_varname(@name)
     if lib.getClass(@block) == Block
       """
         var #{fname} = function(#{js_args}) {>>
-          #{@block.compile(env, return: true)}<<
+          #{@block.compile(block_env, return: true)}<<
         };
       """
     else
-      "var #{fname} = function(#{js_args}) { return #{@block.compile(env)}; };"
+      "var #{fname} = function(#{js_args}) { return #{@block.compile(block_env)}; };"
 
 class TypedArgument
   constructor: (@name, @type) ->
@@ -102,6 +104,13 @@ class TupleType
   process: (env) ->
     tuple_args = env.get_types_from_nodes(@types)
     {env, type: new types.Tuple(tuple_args)}
+
+class FunctionType
+  constructor: (@args, @result) ->
+  process: (env) ->
+    args = new types.NamedTuple(["", t] for t in env.get_types_from_nodes(@args))
+    result = @result.process(env).type
+    {env, type: new types.Function(args, result)}
 
 ## Expressions
 
@@ -163,12 +172,11 @@ class FunctionCall
       namespace = types.match_types(function_args, merged) or
         error("TypeError", "function '#{function_type}', called with arguments '#{merged}'")
       result.join(namespace)
-        
+
     check_repeated_arguments()
     function_type = @name.process(env).type
-    function_args = function_type.args
-    check_arguments_size(function_args)
-    type = match_types(function_args, function_type.result)
+    check_arguments_size(function_type.args)
+    type = match_types(function_type.args, function_type.result)
     {env, type}
   compile: (env) ->
     key_to_index = _.mash([k, i] for [k, v], i in @name.process(env).type.args.args)
@@ -243,7 +251,8 @@ class Comment
 lib.exportClasses(exports, [
   Root
   SymbolBinding, FunctionBinding, 
-  TypedArgument, Type, TypeVariable, TupleType
+  TypedArgument, Type, TypeVariable, 
+  TupleType, FunctionType
   Expression, ParenExpression, Block, StatementExpression
   Symbol, 
   FunctionCall, FunctionArgument

@@ -35,7 +35,7 @@ class String extends TypeBase
 ## Tuple 
 
 class Tuple extends TypeBase
-  toString: -> "(" + (t.toString() for t in @args).join(", ") + ")"
+  toString: -> "(" + (type.toString() for type in @args).join(", ") + ")"
   get_types: -> @args
 
 class NamedTuple extends TypeBase

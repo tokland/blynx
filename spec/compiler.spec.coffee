@@ -81,6 +81,11 @@ tests = [
    """, should_throw("NameError: undefined symbol 'y'")]
    
   # Function bindings
+
+  ["""
+    f0(): Int = 1
+    x = f0()
+   """, should_have_bindings(f0: "() -> Int", x: "Int")]
   
   ["""
     f0(): Int = 1
@@ -88,8 +93,13 @@ tests = [
    """, 1]
 
   ["""
-    f1(x: Int): Int = x
-    f1(1)
+    f1(x: Float): Int = 1
+    x = f1(1.23)
+   """, should_have_bindings(f1: "(x: Float) -> Int", x: "Int")]
+
+  ["""
+    f1(x: Float): Int = 1
+    f1(1.23)
    """, 1]
 
   ["""
@@ -198,6 +208,16 @@ tests = [
       
     res = f(1)
   """, should_have_bindings(res: "Either(Int, b)")]
+
+  ["""
+    f1(x: Int): Float = 1.2
+    g1(f: (Int) -> Float): Float = f(5)
+    x = g1(f1)
+  """, should_have_bindings
+        f1: "(x: Int) -> Float",
+        g1: "(f: (Int) -> Float) -> Float", 
+        x: "Float"
+  ]
   
   # Infix operators
   
