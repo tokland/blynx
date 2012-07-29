@@ -161,6 +161,11 @@ tests = [
    """, 3]
 
   ["""
+    x = 1
+    x()
+   """, should_throw("TypeError: binding 'Int' called, but it's not a function")]
+
+  ["""
     f(x: Int, y: Int): Int = x
     f(x=1, x=1)
    """, should_throw("ArgumentError: function call repeats argument 'x'")]

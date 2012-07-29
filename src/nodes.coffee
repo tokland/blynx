@@ -156,27 +156,33 @@ class FunctionArgument
 class FunctionCall
   constructor: (@name, @args) ->
   process: (env) ->
+    check_function_type = (function_type) =>
+      unless lib.getClass(function_type) == types.Function
+        error("TypeError", "binding '#{function_type}' called, but it's not a function")
     check_repeated_arguments = =>       
       keys = (arg.name for arg in @args)
       repeated_keys = (k for k, ks of _.groupBy(keys, _.identity) when k and ks.length > 1)
       if (repeated_key = _.first(repeated_keys))
         error("ArgumentError", "function call repeats argument '#{repeated_key}'")
-    check_arguments_size = (function_args) =>
-      size = _.size(function_args.get_types())
+    check_arguments_size = (function_type) =>
+      size = _.size(function_type.args.get_types())
       if _.size(@args) != size
         msg = "function '#{@name.compile(env)}' takes #{size} arguments but #{@args.length} given"
         error("ArgumentError", msg)
-    match_types = (function_args, result) =>
+    match_types = (function_type) =>
+      function_args = function_type.args
+      result = function_type.result
       given_args = new types.NamedTuple([a.name, a.process(env).type] for a in @args)
       merged = function_args.merge(given_args)
       namespace = types.match_types(function_args, merged) or
         error("TypeError", "function '#{function_type}', called with arguments '#{merged}'")
       result.join(namespace)
 
-    check_repeated_arguments()
     function_type = @name.process(env).type
-    check_arguments_size(function_type.args)
-    type = match_types(function_type.args, function_type.result)
+    check_function_type(function_type)
+    check_repeated_arguments()
+    check_arguments_size(function_type)
+    type = match_types(function_type)
     {env, type}
   compile: (env) ->
     key_to_index = _.mash([k, i] for [k, v], i in @name.process(env).type.args.args)
