@@ -69,7 +69,6 @@ class FunctionBinding
     unless namespace = types.match_types(block_type, result_type)
       msg = "function '#{@name}' should return '#{result_type}' but returns '#{block_type}'"
       error("TypeError", msg)
-    debug("namespace:", namespace)
     new_env = env.add_function_binding(@name, @args, result_type)
     {env: new_env, type: result_type}
   compile: (env) -> 
@@ -177,7 +176,6 @@ class FunctionCall
       merged = function_args.merge(given_args)
       namespace = types.match_types(function_args, merged) or
         error("TypeError", "function '#{function_type}', called with arguments '#{merged}'")
-      debug("call", namespace)
       result.join(namespace)
 
     function_type = @name.process(env).type
@@ -243,7 +241,7 @@ class TypeConstructorDefinition
       "var #{@name} = function(#{names.join(', ')}) { return #{val}; };"
   add_binding: (env, type, type_args) ->
     binding_type = if _(@args).isEmpty()
-      env.add_binding(@name, new type([])) 
+      env.add_binding(@name, new type(type_args)) 
     else
       env.add_function_binding(@name, @args, new type(type_args))
 

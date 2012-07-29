@@ -57,6 +57,13 @@ tests = [
     left = Left(1)
     right = Right(1.23)
   """, should_have_bindings(left: "Either(Int, b)"), right: "Either(a, Float)"]
+
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: List(a))
+    xs = Cons(1, Cons(2, Nil))
+    ys = Nil
+  """, should_have_bindings(xs: "List(Int)"), right: "List(a)"]
+
   
   # Symbol bindings
   

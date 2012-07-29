@@ -13,7 +13,8 @@ class Binding
 class Environment
   constructor: (@bindings, @types, @function = []) ->
   inspect: ->
-    bindings = ("    #{k}: #{v}" for k, v of @bindings).join("\n")
+    print_var = (name) -> if name.match(/[a-z_]/i) then name else "(#{name})"
+    bindings = ("    #{print_var(k)}: #{v}" for k, v of @bindings).join("\n")
     "---\nEnvironment:\n" + 
       "  Types: " + _.keys(@types).join(", ") + "\n" + 
       "  Bindings: " + (if _(@bindings).isEmpty() then "none" else "\n"+bindings) + "\n---"
