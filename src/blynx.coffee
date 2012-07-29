@@ -19,14 +19,17 @@ run = (source, options) ->
 
 flag = (opts) -> _.merge({type: yanop.flag}, opts)
 options = yanop.simple
+  # modes
   run:        flag(short: 'r', long: "run", default: true)
-  verbose:    flag(short: 'v', long: "verbose")
   tokens:     flag(short: 't', long: "tokens")
   print:      flag(short: 'p', long: "print")
   ast:        flag(short: 'a', long: "ast")
-  standalone: flag(short: 's', long: "standalone")
   compile:    flag(short: 'c', long: "compile")
   interactie: flag(short: 'i', long: "interactive")
+  # options
+  verbose:    flag(short: 'v', long: "verbose")
+  standalone: flag(short: 's', long: "standalone")
+  
 args = options.argv
 
 if _(args).isEmpty()
