@@ -89,13 +89,21 @@ grammar =
   ]
   
   InnerExpression: [
-    o '( Expression )', -> new ParenExpression($2)
     o 'Symbol'
-    o 'FunctionCall'
-    o 'FunctionCall ( FunctionArgumentList )', -> new FunctionCall($1, $3)
+    o 'Value'
+    o 'Value ( FunctionArgumentList )', -> new FunctionCall($1, $3)
     o 'Literal'
     o 'UnaryOp'
     o 'BinaryOp'
+  ]
+  
+  Value: [
+    o 'ParenExpression'
+    o 'FunctionCall'
+  ]
+  
+  ParenExpression: [
+    o '( Expression )', -> new ParenExpression($2)
   ]
 
   FunctionCall: [

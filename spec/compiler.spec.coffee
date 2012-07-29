@@ -166,10 +166,17 @@ tests = [
     f(1, z=3, y=2)
    """, 3]
 
+  # Chain calls
+  
   ["""
     f(x: Int): Float = 1.23
     g(): (Int) -> Float = f
     x = g()(1)
+   """, should_have_bindings(x: "Float")]
+
+  ["""
+    f(x: Int): Float = 1.23
+    x = (f)(1)
    """, should_have_bindings(x: "Float")]
 
   ["""
