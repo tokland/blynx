@@ -154,7 +154,7 @@ class FunctionArgument
   compile: (env) -> @value.compile(env)
 
 class FunctionCall
-  constructor: (@name, @args) ->
+  constructor: (@fexpr, @args) ->
   process: (env) ->
     check_function_type = (function_type) =>
       unless lib.getClass(function_type) == types.Function
@@ -167,7 +167,7 @@ class FunctionCall
     check_arguments_size = (function_type) =>
       size = _.size(function_type.args.get_types())
       if _.size(@args) != size
-        msg = "function '#{@name.compile(env)}' takes #{size} arguments but #{@args.length} given"
+        msg = "function '#{@fexpr.compile(env)}' takes #{size} arguments but #{@args.length} given"
         error("ArgumentError", msg)
     match_types = (function_type) =>
       function_args = function_type.args
@@ -178,16 +178,16 @@ class FunctionCall
         error("TypeError", "function '#{function_type}', called with arguments '#{merged}'")
       result.join(namespace)
 
-    function_type = @name.process(env).type
+    function_type = @fexpr.process(env).type
     check_function_type(function_type)
     check_repeated_arguments()
     check_arguments_size(function_type)
     type = match_types(function_type)
     {env, type}
   compile: (env) ->
-    key_to_index = _.mash([k, i] for [k, v], i in @name.process(env).type.args.args)
+    key_to_index = _.mash([k, i] for [k, v], i in @fexpr.process(env).type.args.args)
     sorted_args = _.sortBy(@args, (arg) -> parseInt(key_to_index[arg.name]))
-    valid_varname(@name.compile(env)) + 
+    valid_varname(@fexpr.compile(env)) + 
       "(" + _(sorted_args).invoke("compile", env).join(', ') + ")"
 
 ## Literals

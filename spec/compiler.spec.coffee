@@ -63,7 +63,6 @@ tests = [
     xs = Cons(1, Cons(2, Nil))
     ys = Nil
   """, should_have_bindings(xs: "List(Int)"), right: "List(a)"]
-
   
   # Symbol bindings
   
@@ -166,6 +165,12 @@ tests = [
     f(x: Int, y: Int, z: Int): Int = z
     f(1, z=3, y=2)
    """, 3]
+
+  ["""
+    f(x: Int): Float = 1.23
+    g(): (Int) -> Float = f
+    x = g()(1)
+   """, should_have_bindings(x: "Float")]
 
   ["""
     x = 1

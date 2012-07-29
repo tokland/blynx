@@ -92,10 +92,17 @@ grammar =
     o '( Expression )', -> new ParenExpression($2)
     o 'Symbol'
     o 'FunctionCall'
+    o 'FunctionCall ( FunctionArgumentList )', -> new FunctionCall($1, $3)
     o 'Literal'
     o 'UnaryOp'
     o 'BinaryOp'
   ]
+
+  FunctionCall: [
+    o 'ID ( )', -> new FunctionCall(new Symbol($1), [])
+    o 'ID ( FunctionArgumentList )', -> new FunctionCall(new Symbol($1), $3)
+    o 'CAPID ( FunctionArgumentList )', -> new FunctionCall(new Symbol($1), $3)
+  ]  
   
   Symbol: [
     o 'ID', -> new Symbol($1)
@@ -142,12 +149,6 @@ grammar =
 
   TupleTypeList: 
     r 'Type', name: 'TupleTypeList', min: 1, join: ','
-
-  FunctionCall: [
-    o 'ID ( )', -> new FunctionCall(new Symbol($1), [])
-    o 'ID ( FunctionArgumentList )', -> new FunctionCall(new Symbol($1), $3)
-    o 'CAPID ( FunctionArgumentList )', -> new FunctionCall(new Symbol($1), $3)
-  ]  
 
   FunctionArgumentList:
     r 'FunctionArgument', join: ',', min: 1
