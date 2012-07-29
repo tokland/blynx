@@ -162,7 +162,7 @@ class FunctionCall
       merged = function_args.merge(given_args)
       namespace = types.match_types(function_args, merged) or
         error("TypeError", "function '#{function_type}', called with arguments '#{merged}'")
-      types.join_types(result, namespace)
+      result.join(namespace)
         
     check_repeated_arguments()
     function_type = @name.process(env).type
