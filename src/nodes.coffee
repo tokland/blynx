@@ -108,7 +108,7 @@ class TupleType
 class FunctionType
   constructor: (@args, @result) ->
   process: (env) ->
-    args = new types.NamedTuple(["", t] for t in env.get_types_from_nodes(@args))
+    args = new types.NamedTuple([arg.name, arg.process(env).type] for arg in @args)
     result = @result.process(env).type
     {env, type: new types.Function(args, result)}
 

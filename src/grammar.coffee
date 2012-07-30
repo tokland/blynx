@@ -72,14 +72,14 @@ grammar =
     ]
   )
 
-  TypedArgumentList: 
-    r 'TypedArgument', join: ',', min: 1
-
   BlockOrExpression: [
     o 'Block'
     o 'Expression'
   ]
- 
+
+  TypedArgumentList: 
+    r 'TypedArgument', join: ',', min: 1
+
   TypedArgument: [
     o 'ID : Type', -> new TypedArgument($1, $3)
   ]
@@ -147,9 +147,17 @@ grammar =
   Type: [
     o 'CAPID', -> new Type($1, [])
     o 'CAPID ( TypeList )', -> new Type($1, $3)
-    o '( TupleTypeList )', -> new TupleType($2)
-    o '( TupleTypeList ) -> Type', -> new FunctionType($2, $5)
+    o '( NamedTupleArgumentList )', -> new TupleType($2)
+    o '( NamedTupleArgumentList ) -> Type', -> new FunctionType($2, $5)
     o 'TypeVariable'
+  ]
+
+  NamedTupleArgumentList: 
+    r 'NamedTupleArgument', join: ',', min: 0
+
+  NamedTupleArgument: [
+    o 'Type', -> new TypedArgument('', $1)
+    o 'ID : Type', -> new TypedArgument($1, $3)
   ]
   
   TypeList:

@@ -242,7 +242,17 @@ tests = [
         g1: "(f: (Int) -> Float) -> Float", 
         x: "Float"
   ]
-  
+
+  ["""
+    f(x: Int): Int = x
+    g(x: Int, f2: (arg_x: Int) -> Int): Int = f2(arg_x=x)
+    x = g(1, f)
+  """, should_have_bindings
+        f: "(x: Int) -> Int",
+        g: "(x: Int, f2: (arg_x: Int) -> Int) -> Int", 
+        x: "Int"
+  ]
+
   # Infix operators
   
   ["""
