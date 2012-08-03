@@ -17,27 +17,36 @@ State: _in development_ (~ January 2013)
 
 # A quick glance
 
-Project Euler problem 20: _Find the sum of the digits in the number 100!_. It can be written as a one-liner, but let's abstract reusable functions _factorial_ and _digits_:
+## Project Euler #20 
+
+_Find the sum of the digits in the number 100!_. A one-liner:
+
+[1..100].reduce(1, (*)).str.chars.map(int).reduce(0, (+)) #=> 648 : Int
+
+That's nice, but programming is building abstractions, let's split it into reusable functions:
 
 ```coffeescript
+sum(xs: [a]): a where(a@Numeric) = xs.reduce(0, (+))
+product(xs: [a]): a where(a@Numeric) = xs.reduce(1, (*))
 factorial(n: Int): Int = [1..n].product
 digits(n: Int): [Int] = n.str.chars.map(int)
-euler20(): Int = factorial(100).digits.sum
 
-euler20() #=> 648 : Int
+sum(digits(100.factorial)) #=> 648 : Int
 ```
 
-Functional quicksort:
+Note how the implementation mimics the formulation of the problem: "sum of the digits in the number 100!" becomes ```sum(digits(100.factorial))```.
+
+## Functional sort
 
 ```coffeescript
-quicksort(xs: [a]): [a] where(a@Orderable) = 
+sort(xs: [a]): [a] where(a@Orderable) = 
   match xs
     [] -> []
     (pivot::rest) ->
       (smaller, greater) = rest.partition(|x| -> x <= pivot)
-      quicksort(smaller) ++ [pivot] ++ quicksort(greater)
+      sort(smaller) ++ [pivot] ++ sort(greater)
 
-[4, 3, 2, 5, 1].quicksort #=> [1, 2, 3, 4, 5] : [Int]
+[4, 3, 2, 5, 1].sort #=> [1, 2, 3, 4, 5] : [Int]
 ```
 
 # More
