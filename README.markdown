@@ -4,7 +4,7 @@ State: _in development_ (~ January 2013)
 
 # Features
 
-  * Functional (impure, though controlled, side-effects are allowed).
+  * Functional (impure -yet controlled- side-effects are allowed).
   * Statically typed.
   * Basic types built-in: boolean, integer, float, string, list, array, dictionary, tuple.
   * Algebraic data types.
@@ -38,7 +38,7 @@ digits(n: Int): [Int] = n.str.chars.map(int)
 sum(digits(100.factorial)) #=> 648 : Int
 ```
 
-Note how now the final expression exactly mimics the formulation of the problem: "sum of the digits in the number 100!" becomes ```sum(digits(100.factorial))```.
+Note that now the final expression mimics exactly the formulation: "sum of the digits in the number 100!" becomes ```sum(digits(100.factorial))```.
 
 ### Functional sort
 
@@ -55,4 +55,4 @@ sort(xs: [a]): [a] where(a@Orderable) =
 
 # More
 
-  * A longer example: https://github.com/tokland/blynx/blob/master/examples/validate-publications.coffee
+  * A complete example that covers most of the language: https://github.com/tokland/blynx/blob/master/examples/validate-publications.coffee
