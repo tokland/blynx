@@ -20,7 +20,7 @@ import fs
 import sys
 import re(match)
 
-export(Publication, is_valid)
+export(Publication, isValid)
 
 type Publication traits(Equalable, Showable) =
   Book(title: String, isbn: String) |
@@ -32,12 +32,12 @@ trait Showable Publication
       Book as book -> "Book <#{book$title}> (#{book$isbn})"
       Magazine as magazine -> "Magazine <#{magazine$name}> (#{magazine$issn})"
 
-is_valid(publication: Publication): Bool =
+isValid(publication: Publication): Bool =
   match publication
-    Book(isbn=isbn) -> isbn.is_isbn13_valid
-    Magazine(issn=issn) -> issn.is_issn_valid
+    Book(isbn=isbn) -> isbn.isIsbn13Valid
+    Magazine(issn=issn) -> issn.isIssnValid
 
-is_isbn13_valid(isbn13: String): Bool =
+isIsbn13Valid(isbn13: String): Bool =
   # An ISBN-13 has 12 digits and a check digit:
   #
   # x13 = (10 - (x1 + 3*x2 + x3 + 3*x4 + ... + x11 + 3*x12) mod 10) mod 10
@@ -49,7 +49,7 @@ is_isbn13_valid(isbn13: String): Bool =
   expected_x12 = (10 - (terms.sum % 10)) % 10
   xs.get(12) == expected_x12
 
-is_issn_valid(issn: String): Bool =
+isIssnValid(issn: String): Bool =
   # An ISSN number is an eight digit number (divided by a hyphen into 
   # two four-digit numbers), being the last one the check_digit: 
   # 
@@ -65,19 +65,19 @@ is_issn_valid(issn: String): Bool =
     other -> other.str
   issn.get(8) == expected_x7
 
-get_publications_from_file(path: String): impure [Publication] =
-  parse_line(line: String): Maybe(Publication) =
+getPublicationsFromFile(path: String): impure [Publication] =
+  parseLine(line: String): Maybe(Publication) =
     fields = line.split("|").map(strip)
     match fields
       ["book", isbn13, title] -> Just(Book(title=title, isbn13=isb13))
       ["magazine", issn, name] -> Just(Magazine(name=name, issn=issn))
       other -> Nothing
-  fs@readFileSync(path, "utf8").lines.map(parse_line).compact
+  fs@readFileSync(path, "utf8").lines.map(parseLine).compact
 
 main() =
   sys@args.each(path ->
-    get_publications_from_file(path).each(publication ->
-      state = if publication.is_valid then "valid" else "invalid"
+    getPublicationsFromFile(path).each(publication ->
+      state = if publication.isValid then "valid" else "invalid"
       print("#{publication} -- #{state}")
     )
   )
