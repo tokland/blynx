@@ -4,12 +4,12 @@ State: _in development_ (~ January 2013)
 
 # Features
 
-  * Functional (but impure side effects are allowed).
+  * Functional (though impure -and controlled- side-effects are allowed).
   * Statically typed.
   * Basic types built-in: boolean, integer, float, string, list, array, dictionary, tuple.
   * Algebraic data types.
   * Polymorphic types.
-  * Type-classes (traits).
+  * Traits (also known as type-classes).
   * Automatic type-inference.
   * Pattern-matching.
   * Eager/strict evaluation.
@@ -17,11 +17,13 @@ State: _in development_ (~ January 2013)
 
 # A quick glance
 
-## Project Euler #20 
+### Project Euler #20 
 
 _Find the sum of the digits in the number 100!_. A one-liner:
 
+```coffeescript
 [1..100].reduce(1, (*)).str.chars.map(int).reduce(0, (+)) #=> 648 : Int
+```
 
 That's nice, but programming is building abstractions, let's split it into reusable functions:
 
@@ -36,7 +38,7 @@ sum(digits(100.factorial)) #=> 648 : Int
 
 Note how the implementation mimics the formulation of the problem: "sum of the digits in the number 100!" becomes ```sum(digits(100.factorial))```.
 
-## Functional sort
+### Functional sort
 
 ```coffeescript
 sort(xs: [a]): [a] where(a@Orderable) = 
@@ -52,4 +54,4 @@ sort(xs: [a]): [a] where(a@Orderable) =
 # More
 
   * Language overview: https://github.com/tokland/blynx/wiki/Overview
-  * Example: https://github.com/tokland/blynx/blob/master/examples/validate-publications.coffeescript
+  * A complete example: https://github.com/tokland/blynx/blob/master/examples/validate-publications.coffeescript
