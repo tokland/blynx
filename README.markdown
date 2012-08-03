@@ -4,7 +4,7 @@ State: _in development_ (~ January 2013)
 
 # Features
 
-  * Functional (though impure -and controlled- side-effects are allowed).
+  * Functional (impure, though controlled, side-effects are allowed).
   * Statically typed.
   * Basic types built-in: boolean, integer, float, string, list, array, dictionary, tuple.
   * Algebraic data types.
@@ -15,7 +15,9 @@ State: _in development_ (~ January 2013)
   * Eager/strict evaluation.
   * Whitespace-relevant syntax.
 
-# A quick glance
+A more detailed language overview: https://github.com/tokland/blynx/wiki/Overview
+
+# Take a quick glance
 
 ### Project Euler #20 
 
@@ -25,7 +27,7 @@ _Find the sum of the digits in the number 100!_. A one-liner:
 [1..100].reduce(1, (*)).str.chars.map(int).reduce(0, (+)) #=> 648 : Int
 ```
 
-That's nice, but programming is building abstractions, let's split it into reusable functions:
+Well, that's nice, but programming is building abstractions, let's split it into re-usable functions:
 
 ```coffeescript
 sum(xs: [a]): a where(a@Numeric) = xs.reduce(0, (+))
@@ -36,7 +38,7 @@ digits(n: Int): [Int] = n.str.chars.map(int)
 sum(digits(100.factorial)) #=> 648 : Int
 ```
 
-Note how the implementation mimics the formulation of the problem: "sum of the digits in the number 100!" becomes ```sum(digits(100.factorial))```.
+Note how now the final expression exactly mimics the formulation of the problem: "sum of the digits in the number 100!" becomes ```sum(digits(100.factorial))```.
 
 ### Functional sort
 
@@ -45,7 +47,7 @@ sort(xs: [a]): [a] where(a@Orderable) =
   match xs
     [] -> []
     (pivot::rest) ->
-      (smaller, greater) = rest.partition(|x| -> x <= pivot)
+      (smaller, greater) = rest.partition(x -> x < pivot)
       sort(smaller) ++ [pivot] ++ sort(greater)
 
 [4, 3, 2, 5, 1].sort #=> [1, 2, 3, 4, 5] : [Int]
@@ -53,5 +55,4 @@ sort(xs: [a]): [a] where(a@Orderable) =
 
 # More
 
-  * Language overview: https://github.com/tokland/blynx/wiki/Overview
-  * A complete example: https://github.com/tokland/blynx/blob/master/examples/validate-publications.coffeescript
+  * A longer example: https://github.com/tokland/blynx/blob/master/examples/validate-publications.coffee
