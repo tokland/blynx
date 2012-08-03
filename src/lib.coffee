@@ -27,7 +27,7 @@ unwrap = /^function\s*\(\)\s*\{\s*return\s*([\s\S]*);\s*\}/
 exports.createGrammarItem = o = (patternString, action, options) ->
   patternString = patternString.replace(/\s{2,}/g, ' ')
   if action
-    match = unwrap.exec action
+    match = unwrap.exec(action)
     action = (if match then match[1] else "(#{action}())").
       replace(/\bnew (\w+)\(/g, 'new yy.node("$1", ').
       replace(/\b(?:Block\.wrap|extend)\b/g, 'yy.$&')
@@ -57,7 +57,7 @@ exports.indent = (source) ->
     else 0
     new_indent = state.indent + indent_increment
     state.output.push(line)
-    _(state).update(indent: new_indent, output: state.output)
+    _(state).merge(indent: new_indent, output: state.output)
   ).output.join("\n")
   
 exports.getClass = (obj) -> 

@@ -165,6 +165,9 @@ tests = [
 
   ["case",
     "[CASE case]"]
+
+  ["trait traits traitinterface",
+    "[TRAIT trait] [TRAITS traits] [TRAITINTERFACE traitinterface]"]
 ]
 
 tokens = (args...) ->
