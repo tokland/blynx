@@ -319,6 +319,20 @@ tests = [
     y = 2
     # yet another comment
   """, should_have_bindings(x: "Int", y: "Int")]
+
+  # Traits
+  
+  ["""
+    traitinterface Showable a
+      str: (x: a) -> String
+      
+    type Semaphore traits(Showable) = Red | Yellow | Green
+
+    trait Showable Semaphore
+      str(x: Semaphore): String = "SomeValueUntilWeCanMatch"
+
+    x = str(Red)
+  """, should_have_bindings(x: "String")]
 ]
 
 describe "compiler", ->
@@ -333,10 +347,10 @@ describe "compiler", ->
               should.throw(msg, "Failed on #{source}")
         else if expected._should_have_bindings
           bindings = expected.bindings
-          {env} = compiler.compile(source, skip_prelude: true)
           for name, expected_type_string of bindings
             do(name, expected_type_string) -> 
               it "'#{name}' should have type '#{expected_type_string}'", ->
+                {env} = compiler.compile(source, skip_prelude: true)
                 type_string = env.get_binding(name).inspect()
                 assert.deepEqual(type_string, expected_type_string, "Failed on:\n#{source}")
       else

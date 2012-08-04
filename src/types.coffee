@@ -41,6 +41,9 @@ class Tuple extends TypeBase
 class NamedTuple extends TypeBase
   toString: -> "(" + (((if k then "#{k}: " else "") + t) for [k, t] in @args).join(", ") + ")"
   get_types: -> (v for [k, v] in @args)
+  join: (namespace) ->
+    new_args = ([k, t.join(namespace)] for [k, t] in @args)
+    new @constructor(new_args)
   merge: (other) ->
     index_to_key = _.mash([i, k] for [k, v], i in @args)
     key_to_index = _.mash([k, i] for i, k of index_to_key)
@@ -54,10 +57,19 @@ class NamedTuple extends TypeBase
 # Function
 
 class Function extends TypeBase
-  constructor: (@args, @result) -> super
-  toString: -> "#{@args.toString()} -> #{@result.toString()}"
-  get_types: -> [@args, @result]
-  join: (namespace) -> new Function(@args.join(namespace), @result.join(namespace))
+  constructor: (@args, @result, @trait, @restrictions) ->
+    super
+  toString: ->
+    _([
+      "#{@args.toString()} -> #{@result.toString()}"
+      ("where(#{("#{k}@#{v}" for [k, v] in @restrictions)})") if _(@restrictions).isNotEmpty()
+      "[trait #{@trait}]" if @trait
+    ]).compact().join(" ")
+  get_types: -> 
+    [@args, @result]
+  join: (namespace) ->
+    new_restrictions = ([tv.join(namespace), type] for [tv, type] in @restrictions)
+    new Function(@args.join(namespace), @result.join(namespace), @trait, new_restrictions)
 
 ## ADT
 

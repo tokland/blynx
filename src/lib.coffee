@@ -9,9 +9,13 @@ exports.debug = (args...) ->
 exports.error = (type, msg) ->
   throw new Error("#{type}: #{msg}")
 
-exports.exportClasses  = (_exports, klasses) ->
+exports.exportClasses = (_exports, klasses) ->
   for klass in klasses
-    _exports[klass.name] = klass  
+    _exports[klass.name] = klass
+    
+exports.indent = (nspaces, text) ->
+  indentation = _.repeat(" ", nspaces).join("")
+  indentation + text
 
 # Lexer
 
@@ -48,7 +52,7 @@ exports.recursiveGrammarItem = (rule, options = {}) ->
 
 # Nodes
 
-exports.indent = (source) -> 
+exports.indent_code = (source) -> 
   _(source.split(/\n/)).freduce({indent: 0, output: []}, (state, original_line) ->
     indentation = _.repeat("  ", state.indent).join("")
     line = indentation + original_line.trim().replace(/(>>|<<)\s*$/, '')

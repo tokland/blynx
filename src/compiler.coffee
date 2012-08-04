@@ -5,44 +5,71 @@ lexer = require('./lexer')
 nodes = require('./nodes')
 grammar = require('./grammar')
 lib = require './lib'
-{debug, error} = lib
-
-class Binding
-  constructor: (@type) ->
+{debug, error, indent} = lib
 
 class Environment
-  constructor: (@bindings, @types, @function = []) ->
+  constructor: (fields = {}) ->
+    {@bindings, @types, @traits, @context} =
+      _(fields).defaults(bindings: {}, types: {}, traits: {}, context: {})
+  clone: (fields = {}) ->
+    all_fields = _(fields).defaults({@types, @bindings, @traits, @context})
+    new Environment(all_fields) 
   inspect: ->
-    print_var = (name) -> if name.match(/[a-z_]/i) then name else "(#{name})"
-    bindings = ("    #{print_var(k)}: #{v}" for k, v of @bindings).join("\n")
-    "---\nEnvironment:\n" + 
-      "  Types: " + _.keys(@types).join(", ") + "\n" + 
-      "  Bindings: " + (if _(@bindings).isEmpty() then "none" else "\n"+bindings) + "\n---"
-  add_binding: (name, type, options = {}) ->
+    print_name = (name) -> if name.match(/[a-z_]/i) then name else "(#{name})"
+    types = (indent(4, "#{name}: #{type.traits.join(', ')}") for name, type of @types)
+    traits = (indent(4, "#{name}: #{_.keys(trait.bindings).join(', ')}") for name, trait of @traits)
+    bindings = (indent(4, "#{print_name(k)}: #{v}") for k, v of @bindings)
+    
+    [
+      "---"
+      "Environment:" 
+      "  Types: " + (if _(@types).isEmpty() then "none" else "\n" + types.join("\n")) 
+      "  Traits: " + (if _(@traits).isEmpty() then "none" else "\n" + traits.join("\n"))
+      "  Bindings: " + (if _(@bindings).isEmpty() then "none" else "\n"+bindings.join("\n"))
+      "---"
+    ].join("\n")
+  add_binding: (name, type, traits = [], options = {}) ->
     if @bindings[name]
       msg = options.error_msg or "symbol '#{name}' already bound to type '#{@bindings[name]}'"  
       error("BindingError", msg)
     new_bindings = _.merge(@bindings, _.mash([[name, type]]))
-    new Environment(new_bindings, @types, @function)
+    @clone(bindings: new_bindings)
   get_binding: (name) ->
     @bindings[name] or
       error("NameError", "undefined symbol '#{name}'")
   get_types_from_nodes: (nodes) ->
     (node.process(this).type for node in nodes)
-  add_type: (name, type) ->
+  add_type: (name, klass, traits) ->
     @types[name] and
       error("TypeError", "type '#{name}' already defined")
+    type = {klass: klass, traits: traits}
     new_types = _.merge(@types, _.mash([[name, type]]))
-    new Environment(@bindings, new_types, @function)
+    @clone(types: new_types)
   get_type: (name) ->
-    @types[name] or
+    type = @types[name] or
       error("TypeError", "undefined type '#{name}'")
-  add_function_binding: (name, args, result_type) ->
+    type.klass
+  add_function_binding: (name, args, result_type, traits) ->
+    return if @get_context("trait")
     args_ns = ([arg.name, arg.process(this).type] for arg in args)
     args_type = new types.NamedTuple(args_ns)
-    function_type = new types.Function(args_type, result_type)
-    @add_binding(name, function_type)
-
+    function_type = new types.Function(args_type, result_type, null, [])
+    @add_binding(name, function_type, traits)
+  add_trait: (name, typevar, bindings) ->
+    if name of @traits
+      error("TypeError", "Trait '#{name}' already defined")
+    trait = {typevar, bindings}
+    new_trait_bindings = _.mash([[name, trait]])
+    new_env = _(_.pairs(bindings)).freduce this, (env, [name, binding]) ->
+      env.add_binding(name, binding)
+    new_env.clone(traits: _.merge(@traits, new_trait_bindings))
+  add_type_bindings_for_trait: (type_name, trait_name, bindings) ->
+    @clone()
+  get_context: (name) ->
+    if @context then @context[name] else null
+  in_context: (new_context) ->
+    @clone(context: new_context)
+    
 ##
 
 getParser = (options) ->
@@ -67,10 +94,8 @@ exports.getAST = getAST = (source, options = {}) ->
   parser.parse(tokens)
 
 exports.compile = compile = (source, options = {}) ->
-  get_basic_types = (names) -> 
-    _(names).mash((name) -> [name, types[name]])
-  basic_types = get_basic_types(["Int", "Float", "String", "Tuple"])
-  env = new Environment({}, basic_types)
+  env = _(["Int", "Float", "String"]).freduce new Environment, (e, name) ->
+    e.add_type(name, types[name], [])
   {env: final_env, output} = getAST(source, options).compile_with_process(env)
   process.stderr.write(final_env.inspect()+"\n") if options.debug 
   {env: final_env, output: output + "\n"}

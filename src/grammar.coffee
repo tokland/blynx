@@ -23,13 +23,50 @@ grammar =
     
   Statement: [
     o 'TypeDefinition'
+    o 'TraitInterface'
+    o 'TraitImplementation'
     o 'SymbolBinding'
     o 'FunctionBinding'
   ]
   
   TypeDefinition: [
-    o 'TYPE CAPID = TypeConstructorList', -> new TypeDefinition($2, [], $4)
-    o 'TYPE CAPID ( TypeArguments ) = TypeConstructorList', -> new TypeDefinition($2, $4, $7)
+    o 'TYPE CAPID TypeTraits = TypeConstructorList', 
+        -> new TypeDefinition($2, [], $3, $5)
+    o 'TYPE CAPID ( TypeArguments ) TypeTraits = TypeConstructorList', 
+        -> new TypeDefinition($2, $4, $6, $8)
+  ]
+
+  TraitInterface: [
+    o 'TRAITINTERFACE CAPID TypeVariable INDENT SymbolTypeDefinitionList DEDENT', 
+        -> new TraitInterface($2, $3, $5)
+  ]
+  
+  TraitImplementation: [
+    o 'TRAIT CAPID CAPID INDENT TraitImplementationFunctionList DEDENT', 
+        -> new TraitImplementation($2, $3, $5)
+  ]
+  
+  TraitImplementationFunctionList:
+    r 'TraitImplementationFunction TERMINATOR', min: 1
+  
+  TraitImplementationFunction: [
+    o 'FunctionBinding'
+    o 'SymbolBinding'
+  ]
+  
+  TypeTraits: [
+    o ''
+    o 'TRAITS ( CapIdList )', -> $3      
+  ]
+  
+  CapIdList: 
+    r 'CAPID', min: 1, join: ',', name: 'CapIdList'
+  
+  SymbolTypeDefinitionList:
+    r 'SymbolTypeDefinition', min: 1
+  
+  SymbolTypeDefinition: [
+    o 'ID : Type TERMINATOR', -> new SymbolTypeDefinition($1, $3) 
   ]
   
   TypeArguments:
