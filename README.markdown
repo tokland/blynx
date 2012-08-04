@@ -9,10 +9,9 @@ State: _in development_ (~ January 2013)
   * Basic types built-in: boolean, integer, float, string, list, array, dictionary, tuple.
   * Algebraic data types.
   * Polymorphic types.
-  * Traits (also known as type-classes).
+  * Type-traits (type-classes).
   * Automatic type-inference.
   * Pattern-matching.
-  * Eager/strict evaluation.
   * Whitespace-relevant syntax.
 
 A more detailed language overview: https://github.com/tokland/blynx/wiki/Overview
