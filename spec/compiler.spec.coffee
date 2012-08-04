@@ -2,22 +2,26 @@ should = require 'should'
 assert = require 'assert'
 grammar = require 'grammar'
 compiler = require 'compiler'
+_ = require 'underscore_extensions'
 
 should_throw = (error_string) -> 
   {_should_throw: true, error_string}
   
 should_have_bindings = (bindings) -> 
   {_should_have_bindings: true, bindings}
+
+should_have = (what) -> 
+  _(what).merge(_should_have: true)
   
 tests = [
   ["", undefined]
   
   # Pre-defined types
 
-  ["x = 1", should_have_bindings(x: "Int")]
-  ["x = 1.23", should_have_bindings(x: "Float")]
-  ['x = "hello"', should_have_bindings(x: "String")]
-  ['x = (1, 1.23, "hello")', should_have_bindings(x: "(Int, Float, String)")]
+  ["x = 1", should_have(bindings: {x: "Int"})]
+  ["x = 1.23", should_have(bindings: {x: "Float"})]
+  ['x = "hello"', should_have(bindings: {x: "String"})]
+  ['x = (1, 1.23, "hello")', should_have(bindings: {x: "(Int, Float, String)"})]
 
   # ADT
 
@@ -25,7 +29,7 @@ tests = [
     type Bool = True | False
     x = True
     y = False
-  """, should_have_bindings(x: "Bool", y: "Bool")]
+  """, should_have(bindings: {x: "Bool", y: "Bool"})]
 
   ["""
     type Bool = True | False
@@ -43,7 +47,7 @@ tests = [
     type Entity = Square(side: Int) | Point
     square = Square(5)
     point = Point
-  """, should_have_bindings(square: "Entity", point: "Entity")]
+  """, should_have(bindings: {square: "Entity", point: "Entity"})]
 
   ["""
     type Entity = Square(side: Int) | Point
@@ -56,26 +60,26 @@ tests = [
     type Either(a, b) = Left(value: a) | Right(error: b)
     left = Left(1)
     right = Right(1.23)
-  """, should_have_bindings(left: "Either(Int, b)"), right: "Either(a, Float)"]
+  """, should_have(bindings: {left: "Either(Int, b)", right: "Either(a, Float)"})]
 
   ["""
     type List(a) = Nil | Cons(head: a, tail: List(a))
     xs = Cons(1, Cons(2, Nil))
     ys = Nil
-  """, should_have_bindings(xs: "List(Int)"), right: "List(a)"]
+  """, should_have(bindings: {xs: "List(Int)", ys: "List(a)"})]
   
   # Symbol bindings
   
   ["""
     x = 1
-   """, should_have_bindings(x: "Int")]
+   """, should_have(bindings: {x: "Int"})]
 
   ["""
     x =
       1
       y = 2.3
       y
-   """, should_have_bindings(x: "Float")]
+   """, should_have(bindings: {x: "Float"})]
 
   ["x", should_throw("NameError: undefined symbol 'x'")]
 
@@ -91,7 +95,7 @@ tests = [
   ["""
     f0(): Int = 1
     x = f0()
-   """, should_have_bindings(f0: "() -> Int", x: "Int")]
+   """, should_have(bindings: {f0: "() -> Int", x: "Int"})]
   
   ["""
     f0(): Int = 1
@@ -101,7 +105,7 @@ tests = [
   ["""
     f1(x: Float): Int = 1
     x = f1(1.23)
-   """, should_have_bindings(f1: "(x: Float) -> Int", x: "Int")]
+   """, should_have(bindings: {f1: "(x: Float) -> Int", x: "Int"})]
 
   ["""
     f1(x: Float): Int = 1
@@ -172,12 +176,12 @@ tests = [
     f(x: Int): Float = 1.23
     g(): (Int) -> Float = f
     x = g()(1)
-   """, should_have_bindings(x: "Float")]
+   """, should_have(bindings: {x: "Float"})]
 
   ["""
     f(x: Int): Float = 1.23
     x = (f)(1)
-   """, should_have_bindings(x: "Float")]
+   """, should_have(bindings: {x: "Float"})]
 
   ["""
     x = 1
@@ -231,7 +235,7 @@ tests = [
       Left(4)
       
     res = f(1)
-  """, should_have_bindings(res: "Either(Int, b)")]
+  """, should_have(bindings: {res: "Either(Int, b)"})]
 
   ["""
     f1(x: Int): Float = 1.2
@@ -318,7 +322,7 @@ tests = [
     # another comment
     y = 2
     # yet another comment
-  """, should_have_bindings(x: "Int", y: "Int")]
+  """, should_have(bindings: {x: "Int", y: "Int"})]
 
   # Traits
   
@@ -332,7 +336,7 @@ tests = [
       str(x: Semaphore): String = "SomeValueUntilWeCanMatch"
 
     x = str(Red)
-  """, should_have_bindings(x: "String")]
+  """, should_have(bindings: {x: "String"})]
 ]
 
 describe "compiler", ->
@@ -345,7 +349,7 @@ describe "compiler", ->
           it "should throw exception:\n\n#{source}", ->
             (-> compiler.compile(source, skip_prelude: true)).
               should.throw(msg, "Failed on #{source}")
-        else if expected._should_have_bindings
+        else if expected._should_have
           bindings = expected.bindings
           for name, expected_type_string of bindings
             do(name, expected_type_string) -> 
