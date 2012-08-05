@@ -1,12 +1,12 @@
 Blynx is a statically-typed functional language that transcompiles to Javascript. 
 
-State: _in development_ (~ January 2013)
+State: _in development_ (alpha ~ Jan/2013)
 
 # Features
 
-  * Functional (impure -yet controlled- side-effects are allowed).
+  * Functional (controlled side-effects are allowed).
   * Statically typed.
-  * Basic types built-in: boolean, integer, float, string, list, array, dictionary, tuple.
+  * Common types built-in: boolean, integer, float, string, list, array, dictionary, tuple.
   * Algebraic data types.
   * Polymorphic types.
   * Type-traits (type-classes).
@@ -14,7 +14,7 @@ State: _in development_ (~ January 2013)
   * Pattern-matching.
   * Whitespace-relevant syntax.
 
-A more detailed language overview: https://github.com/tokland/blynx/wiki/Overview
+A more detailed overview: https://github.com/tokland/blynx/wiki/Overview
 
 # Take a quick glance
 
@@ -26,7 +26,7 @@ _Find the sum of the digits in the number 100!_. A one-liner:
 [1..100].reduce(1, (*)).str.chars.map(int).reduce(0, (+)) #=> 648 : Int
 ```
 
-Well, that's nice, but programming is building abstractions, let's split it into re-usable functions:
+That's ok to solve that particular problem, but programming is about building abstractions. Let's split it into re-usable functions:
 
 ```coffeescript
 sum(xs: [a]): a where(a@Numeric) = xs.reduce(0, (+))
@@ -47,11 +47,6 @@ sort(xs: [a]): [a] where(a@Orderable) =
     [] -> []
     (pivot::rest) ->
       (smaller, greater) = rest.partition(x -> x < pivot)
-      sort(smaller) ++ [pivot] ++ sort(greater)
+      smaller.sort ++ [pivot] ++ greater.sort
 
 [4, 3, 2, 5, 1].sort #=> [1, 2, 3, 4, 5] : [Int]
-```
-
-# More
-
-  * A complete example that covers most of the language: https://github.com/tokland/blynx/blob/master/examples/validate-publications.coffee

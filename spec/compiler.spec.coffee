@@ -333,10 +333,14 @@ tests = [
     type Semaphore traits(Showable) = Red | Yellow | Green
 
     trait Showable Semaphore
-      str(x: Semaphore): String = "SomeValueUntilWeCanMatch"
+      str(x: Semaphore): String = "UntilWeCanMatch"
+
+    trait Showable Int
+      str(x: Int): String = "1"
 
     x = str(Red)
-  """, should_have(bindings: {x: "String"})]
+    y = str(1)
+  """, should_have(values: {x: "UntilWeCanMatch", y: 1}, bindings: {x: "String"})]
 ]
 
 describe "compiler", ->
@@ -350,14 +354,18 @@ describe "compiler", ->
             (-> compiler.compile(source, skip_prelude: true)).
               should.throw(msg, "Failed on #{source}")
         else if expected._should_have
-          bindings = expected.bindings
-          for name, expected_type_string of bindings
-            do(name, expected_type_string) -> 
+          if (bindings = expected.bindings)
+            for name, expected_type_string of bindings
               it "'#{name}' should have type '#{expected_type_string}'", ->
                 {env} = compiler.compile(source, skip_prelude: true)
                 type_string = env.get_binding(name).inspect()
                 assert.deepEqual(type_string, expected_type_string, "Failed on:\n#{source}")
+          if (values = expected.values)
+            for name, expected_value of values
+              it "'#{name}' should have value '#{expected_value}'", ->
+                {context, value} = compiler.run(source, skip_prelude: true)
+                assert.deepEqual(context[name], expected_value, "Failed on:\n#{source}")
       else
         it "should compile:\n\n#{source}", ->
-          output = compiler.run(source, skip_prelude: true)
-          assert.deepEqual(output, expected, "Failed on #{source}")
+          {value} = compiler.run(source, skip_prelude: true)
+          assert.deepEqual(value, expected, "Failed on #{source}")

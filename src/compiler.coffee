@@ -100,7 +100,12 @@ exports.compile = compile = (source, options = {}) ->
   process.stderr.write(final_env.inspect()+"\n") if options.debug 
   {env: final_env, output: output + "\n"}
   
+exports.run_js = run_js = (jscode, base_context = null) ->  
+  sandbox = {api: require('./api'), console: console}
+  context = base_context or vm.createContext(sandbox)
+  value = vm.runInContext(jscode, context)
+  {context, value}
+
 exports.run = (source, options = {}) ->
   output = compile(source, options).output
-  sandbox = {api: require('./api'), console: console}
-  vm.runInNewContext(output, sandbox)
+  run_js(output)
