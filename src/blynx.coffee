@@ -10,10 +10,10 @@ lib = require('./lib')
 {error, debug} = lib
 
 compile = (source, options) ->
-  compiler.compile(source, debug: options.verbose, skip_prelude: !options.standalone)
+  compiler.compile(source, debug: options.verbose)
 
 run = (source, options) ->
-  compiler.run(source, debug: options.verbose, skip_prelude: !options.standalone)
+  compiler.run(source, debug: options.verbose)
 
 ## Main
 
@@ -28,7 +28,6 @@ options = yanop.simple
   interactie: flag(short: 'i', long: "interactive")
   # options
   verbose:    flag(short: 'v', long: "verbose")
-  standalone: flag(short: 's', long: "standalone")
   
 args = options.argv
 
@@ -54,6 +53,7 @@ for source_path in args
     debug("Written to file: #{jspath}")
   else if options.ast
     ast = compiler.getAST(source)
-    util.print(ast + "\n") # TODO: pretty print of AST nodes
+    past = compiler.pretty_ast(ast)
+    util.print(JSON.stringify(past, null, 2) + "\n") 
   else if options.run
     run(source, options)

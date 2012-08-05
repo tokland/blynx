@@ -110,6 +110,17 @@ exports.run_js = run_js = (jscode, base_context = null) ->
   context = base_context or vm.createContext(sandbox)
   value = vm.runInContext(jscode, context)
   {context, value}
+  
+exports.pretty_ast = pretty_ast = (node) ->
+  name = lib.getClass(node).name 
+  values = for k, v of node
+    value = switch v.constructor.name
+      when "Function" then null
+      when "Array" then (pretty_ast(x) for x in v) 
+      when "String" then v
+      else pretty_ast(v)
+    if value then [k, value] else null
+  [name, _.compact(values)]
 
 exports.run = (source, options = {}) ->
   output = compile(source, options).output

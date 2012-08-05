@@ -4,14 +4,8 @@ grammar = require 'grammar'
 compiler = require 'compiler'
 _ = require 'underscore_extensions'
 
-should_throw = (error_string) -> 
-  {_should_throw: true, error_string}
-  
-should_have_bindings = (bindings) -> 
-  {_should_have_bindings: true, bindings}
-
-should_have = (what) -> 
-  _(what).merge(_should_have: true)
+should_throw = (error) -> {_should_throw: true, error}
+should_have = (what) -> _(what).merge(_should_have: true)
   
 tests = [
   ["", undefined]
@@ -241,7 +235,7 @@ tests = [
     f1(x: Int): Float = 1.2
     g1(f: (Int) -> Float): Float = f(5)
     x = g1(f1)
-  """, should_have_bindings
+  """, should_have bindings:
         f1: "(x: Int) -> Float",
         g1: "(f: (Int) -> Float) -> Float", 
         x: "Float"
@@ -251,7 +245,7 @@ tests = [
     f(x: Int): Int = x
     g(x: Int, f2: (arg_x: Int) -> Int): Int = f2(arg_x=x)
     x = g(1, f)
-  """, should_have_bindings
+  """, should_have bindings:
         f: "(x: Int) -> Int",
         g: "(x: Int, f2: (arg_x: Int) -> Int) -> Int", 
         x: "Int"
@@ -386,23 +380,23 @@ describe "compiler", ->
     do (source, expected) ->
       if typeof expected == "object" 
         if expected._should_throw
-          msg = expected.error_string
+          msg = expected.error
           it "should throw exception:\n\n#{source}", ->
-            (-> compiler.compile(source, skip_prelude: true)).
+            (-> compiler.compile(source)).
               should.throw(msg, "Failed on #{source}")
         else if expected._should_have
           if (bindings = expected.bindings)
             for name, expected_type_string of bindings
               it "'#{name}' should have type '#{expected_type_string}'", ->
-                {env} = compiler.compile(source, skip_prelude: true)
+                {env} = compiler.compile(source)
                 type_string = env.get_binding(name).inspect()
                 assert.deepEqual(type_string, expected_type_string, "Failed on:\n#{source}")
           if (values = expected.values)
             for name, expected_value of values
               it "'#{name}' should have value '#{expected_value}'", ->
-                {context, value} = compiler.run(source, skip_prelude: true)
+                {context, value} = compiler.run(source)
                 assert.deepEqual(context[name], expected_value, "Failed on:\n#{source}")
       else
         it "should compile:\n\n#{source}", ->
-          {value} = compiler.run(source, skip_prelude: true)
+          {value} = compiler.run(source)
           assert.deepEqual(value, expected, "Failed on #{source}")

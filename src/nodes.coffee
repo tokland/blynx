@@ -82,17 +82,16 @@ class FunctionBinding
     js_args = _(@args).pluck("name").join(', ')
     ctype = env.get_context('type')
     vname = valid_varname(@name)
-    fname = if ctype then "#{vname}.#{ctype}" else vname
-    var_declaration = if ctype then "" else "var "
+    fname = if ctype then "#{vname}.#{ctype}" else "var #{vname}"
     
     if lib.getClass(@block) == Block
       """
-        #{var_declaration} #{fname} = function(#{js_args}) {>>
+        #{fname} = function(#{js_args}) {>>
           #{@block.compile(block_env, return: true)}<<
         };
       """
     else
-      "#{var_declaration} #{fname} = function(#{js_args}) { return #{@block.compile(block_env)}; };"
+      "#{fname} = function(#{js_args}) { return #{@block.compile(block_env)}; };"
 
 class TypedArgument
   constructor: (@name, @type) ->
