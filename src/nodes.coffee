@@ -198,8 +198,11 @@ class FunctionCall
     key_to_index = _.mash([k, i] for [k, v], i in type.args.args)
     sorted_args = _.sortBy(@args, (arg) -> parseInt(key_to_index[arg.name]))
     prefix_for_type_trait = if type.trait
-      type_for_trait = _.first(t for [t, trait] in type.restrictions when trait == type.trait) or
+      [type_for_trait, trait] = 
+        _.first([t, trait] for [t, trait] in type.restrictions when trait == type.trait) or
         error("InternalError", "Cannot find type for trait '#{trait}'")
+      if type_for_trait.variable
+        error("TypeError", "Restriction '#{type_for_trait}@#{trait}' fails")
       type_for_trait + "_"
     else
       ""
@@ -273,8 +276,9 @@ class Comment
 class TraitInterface
   constructor: (@name, @typevar, @symbol_type_definitions) ->
   process: (env) ->
-    trait_env = env.in_context 
+    trait_env = env.in_context
       trait: @name
+      typevar: @typevar.process(env).type
       restrictions: [[@typevar.process(env).type, @name]]
     bindings = SymbolTypeDefinition.bindings(trait_env, @symbol_type_definitions)
     new_env = env.add_trait(@name, @typevar.name, bindings)
@@ -288,7 +292,13 @@ class SymbolTypeDefinition
     new_env = env.add_binding(@name, type, [])
     {env: new_env, type: type}
   @bindings: (env, symbol_type_definitions) ->
-    _.mash([def.name, def.process(env).type] for def in symbol_type_definitions)
+    _.mash _(symbol_type_definitions).map (def) ->
+      type = def.process(env).type
+      typevar = env.get_context("typevar")
+      if not _.any(type.get_all_types(), (t) -> t.name == typevar.name)
+        error("TypeError", "Function '#{def.name}' for trait '#{env.get_context('trait')}' " +
+          "does not mention type variable '#{typevar}'")
+      [def.name, type]
 
 class TraitImplementation
   constructor: (@trait_name, @type_name, @bindings) ->

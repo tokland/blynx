@@ -10,18 +10,19 @@ class TypeBase
   toString: -> @classname
   inspect: -> @toString()
   get_types: -> this
+  get_all_types: ->
+    type = @get_types()
+    _.flatten1(if type.constructor.name == "Array" then (t.get_all_types() for t in type) else [type])
   @inspect: -> constructor.name
   @toString: -> @inspect()
   join: (namespace) ->
     new_args = ((namespace[tv] or tv) for tv in @args)
     new @constructor(new_args)
 
-class Variable
+class Variable extends TypeBase
   variable: true
   constructor: (@name) -> 
   toString: -> @name 
-  inspect: -> @toString()
-  get_types: -> this
   join: (namespace) -> namespace[this] or this
 
 ## Basic
@@ -105,5 +106,5 @@ exports.match_types = match_types = (expected, given) ->
 
 ##
 
-lib.exportClasses(exports, 
+lib.exportClasses(exports,
   [Int, Float, String, Tuple, NamedTuple, Function, Variable])

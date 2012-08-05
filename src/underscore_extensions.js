@@ -129,6 +129,11 @@ _.mixin({
       return memo.concat(value);
     }, []);
   },
+
+  /* Return a one-level flattened version of an array. */
+  flatMap: function(obj, iterator, context) {
+    return _.flatten1(_.map(obj, iterator, context));
+  },
   
   concat: function() {
     return _.flatten1(arguments);

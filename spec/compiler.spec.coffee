@@ -328,19 +328,25 @@ tests = [
   
   ["""
     traitinterface Showable a
-      str: (x: a) -> String
+      str: (a) -> String
       
     type Semaphore traits(Showable) = Red | Yellow | Green
-
     trait Showable Semaphore
-      str(x: Semaphore): String = "UntilWeCanMatch"
+      str(semaphore: Semaphore): String = "Semaphore" 
 
-    trait Showable Int
-      str(x: Int): String = "1"
+    type State traits(Showable) = Active | Pending | Deleted
+    trait Showable State
+      str(state: Int): String = "State"
 
     x = str(Red)
-    y = str(1)
-  """, should_have(values: {x: "UntilWeCanMatch", y: 1}, bindings: {x: "String"})]
+    y = str(Active)
+  """, should_have(values: {x: "UntilWeCanMatch", y: "State"}, 
+                   bindings: {x: "String", y: "String"})]
+
+  ["""
+    traitinterface Showable a
+      str: (b) -> String
+  """, should_throw("TypeError: Function 'str' for trait 'Showable' does not mention type variable 'a'")]
 ]
 
 describe "compiler", ->
