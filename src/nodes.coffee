@@ -22,11 +22,6 @@ translate_table =
 valid_varname = (s) ->
   ((if translate_table[c] then "__#{translate_table[c]}" else c) for c in s).join("")
    
-get_variable_name = (env, name) ->
-  ctype = env.get_context('type')
-  prefix_for_type_trait = (if ctype then "#{ctype}_" else "")
-  prefix_for_type_trait + valid_varname(name)
-
 exports.FunctionCallFromID = (name, args, options = {}) ->
   name2 = if options.unary then "#{name}_unary" else name
   args2 = (new FunctionArgument("", arg) for arg in args)
@@ -79,16 +74,19 @@ class FunctionBinding
   compile: (env) -> 
     block_env = @get_block_env(env)
     js_args = _(@args).pluck("name").join(', ')
-    fname = get_variable_name(env, @name)
+    ctype = env.get_context('type')
+    vname = valid_varname(@name)
+    fname = if ctype then "#{vname}.#{ctype}" else vname
+    var_declaration = if ctype then "" else "var "
     
     if lib.getClass(@block) == Block
       """
-        var #{fname} = function(#{js_args}) {>>
+        #{var_declaration} #{fname} = function(#{js_args}) {>>
           #{@block.compile(block_env, return: true)}<<
         };
       """
     else
-      "var #{fname} = function(#{js_args}) { return #{@block.compile(block_env)}; };"
+      "#{var_declaration} #{fname} = function(#{js_args}) { return #{@block.compile(block_env)}; };"
 
 class TypedArgument
   constructor: (@name, @type) ->
@@ -197,17 +195,17 @@ class FunctionCall
     type = @match_types(env, function_type)
     key_to_index = _.mash([k, i] for [k, v], i in type.args.args)
     sorted_args = _.sortBy(@args, (arg) -> parseInt(key_to_index[arg.name]))
-    prefix_for_type_trait = if type.trait
+    fname = valid_varname(@fexpr.compile(env))
+    complete_fname = if type.trait
       [type_for_trait, trait] = 
         _.first([t, trait] for [t, trait] in type.restrictions when trait == type.trait) or
         error("InternalError", "Cannot find type for trait '#{trait}'")
       if type_for_trait.variable
         error("TypeError", "Restriction '#{type_for_trait}@#{trait}' fails")
-      type_for_trait + "_"
+      "#{fname}.#{type_for_trait}"
     else
-      ""
-    prefix_for_type_trait + valid_varname(@fexpr.compile(env)) +
-      "(" + (arg.compile(env) for arg in sorted_args).join(', ') + ")"
+      fname
+    complete_fname + "(" + (arg.compile(env) for arg in sorted_args).join(', ') + ")"
 
 ## Literals
   
@@ -283,7 +281,9 @@ class TraitInterface
     bindings = SymbolTypeDefinition.bindings(trait_env, @symbol_type_definitions)
     new_env = env.add_trait(@name, @typevar.name, bindings)
     {env: new_env}
-  compile: (env) -> "// typeinterface #{@name}"
+  compile: (env) -> 
+    "// traitinterface #{@name}\n" + 
+      (def.compile(env) for def in @symbol_type_definitions).join("\n") + "\n"
 
 class SymbolTypeDefinition
   constructor: (@name, @type) ->
@@ -291,6 +291,8 @@ class SymbolTypeDefinition
     type = @type.process(env).type
     new_env = env.add_binding(@name, type, [])
     {env: new_env, type: type}
+  compile: (env) ->
+    "var #{@name} = {};"    
   @bindings: (env, symbol_type_definitions) ->
     _.mash _(symbol_type_definitions).map (def) ->
       type = def.process(env).type
@@ -305,12 +307,11 @@ class TraitImplementation
   process: (env) ->
     trait_env = env.in_context({trait: @trait_name, type: @type_name})
     bindings = (node.process(trait_env).type for node in @bindings)
-    new_env = env.add_type_bindings_for_trait(@type_name, @trait_name, bindings)
-    {env: new_env}
+    {env}
   compile: (env) -> 
-    header = "// trait implementation #{@trait_name} of #{@type_name}"
-    trait_env = env.in_context({trait: @trait_name, type: @type_name})
-    header + "\n" + (node.compile(trait_env) for node in @bindings)
+    header = "// trait #{@trait_name} of #{@type_name}"
+    trait_env = env.in_context(trait: @trait_name, type: @type_name)
+    header + "\n" + (node.compile(trait_env) for node in @bindings) + "\n"
 
 ##
 

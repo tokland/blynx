@@ -55,7 +55,7 @@ grammar =
   ]
   
   TypeTraits: [
-    o ''
+    o '', -> []
     o 'TRAITS ( CapIdList )', -> $3      
   ]
   

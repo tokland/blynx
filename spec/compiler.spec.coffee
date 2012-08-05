@@ -329,17 +329,32 @@ tests = [
   ["""
     traitinterface Showable a
       str: (a) -> String
-      
-    type Semaphore traits(Showable) = Red | Yellow | Green
+    type Semaphore = Red | Yellow | Green
     trait Showable Semaphore
       str(semaphore: Semaphore): String = "Semaphore" 
-
-    type State traits(Showable) = Active | Pending | Deleted
+    type State = Active | Pending | Deleted
     trait Showable State
       str(state: Int): String = "State"
 
     x = str(Red)
     y = str(Active)
+    renamed_str = str
+  """, should_have(values: {x: "UntilWeCanMatch", y: "State"}, 
+                   bindings: {x: "String", y: "String"})]
+
+  ["""
+    traitinterface Showable a
+      str: (a) -> String
+    type Semaphore = Red | Yellow | Green
+    trait Showable Semaphore
+      str(semaphore: Semaphore): String = "Semaphore" 
+    type State = Active | Pending | Deleted
+    trait Showable State
+      str(state: Int): String = "State"
+
+    renamed_str = str
+    x = renamed_str(Red)
+    y = renamed_str(Active)
   """, should_have(values: {x: "UntilWeCanMatch", y: "State"}, 
                    bindings: {x: "String", y: "String"})]
 
@@ -347,6 +362,14 @@ tests = [
     traitinterface Showable a
       str: (b) -> String
   """, should_throw("TypeError: Function 'str' for trait 'Showable' does not mention type variable 'a'")]
+
+  ["""
+    traitinterface Showable a
+      str: (a) -> String
+    type Semaphore = Red | Yellow | Green
+    trait Showable Semaphore
+      str(semaphore: Semaphore, x: Int): String = "SemaphoreString"  
+  """, should_throw("TypeError: Cannot match type of function 'str' for trait 'Showable' (a) -> String with the definition (semaphore: Semaphore, x: Int) -> String")]
 ]
 
 describe "compiler", ->

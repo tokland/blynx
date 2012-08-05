@@ -50,11 +50,15 @@ class Environment
       error("TypeError", "undefined type '#{name}'")
     type.klass
   add_function_binding: (name, args, result_type, traits) ->
-    return if @get_context("trait")
     args_ns = ([arg.name, arg.process(this).type] for arg in args)
     args_type = new types.NamedTuple(args_ns)
     function_type = new types.Function(args_type, result_type, null, [])
-    @add_binding(name, function_type, traits)
+    if (trait = @get_context("trait"))
+      if not types.match_types(@bindings[name], function_type)
+        error("TypeError", "Cannot match type of function '#{name}' for trait " +
+          "'#{trait}' #{@bindings[name].toShortString()} with the definition #{function_type}")
+    else
+      @add_binding(name, function_type, traits)
   add_trait: (name, typevar, bindings) ->
     if name of @traits
       error("TypeError", "Trait '#{name}' already defined")
@@ -63,8 +67,6 @@ class Environment
     new_env = _(_.pairs(bindings)).freduce this, (env, [name, binding]) ->
       env.add_binding(name, binding)
     new_env.clone(traits: _.merge(@traits, new_trait_bindings))
-  add_type_bindings_for_trait: (type_name, trait_name, bindings) ->
-    @clone()
   get_context: (name) ->
     if @context then @context[name] else null
   in_context: (new_context) ->

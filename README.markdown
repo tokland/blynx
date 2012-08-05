@@ -4,7 +4,7 @@ State: _in development_ (alpha ~ Jan/2013)
 
 # Features
 
-  * Functional (controlled side-effects are allowed).
+  * Functional (but controlled side-effects are allowed).
   * Statically typed.
   * Common types built-in: boolean, integer, float, string, list, array, dictionary, tuple.
   * Algebraic data types.
@@ -12,7 +12,8 @@ State: _in development_ (alpha ~ Jan/2013)
   * Type-traits (type-classes).
   * Automatic type-inference.
   * Pattern-matching.
-  * Whitespace-relevant syntax.
+  * Simple asynchronous code.
+  * Easy integration with Javascript libraries. 
 
 A more detailed overview: https://github.com/tokland/blynx/wiki/Overview
 
@@ -26,7 +27,7 @@ _Find the sum of the digits in the number 100!_. A one-liner:
 [1..100].reduce(1, (*)).str.chars.map(int).reduce(0, (+)) #=> 648 : Int
 ```
 
-That's ok to solve that particular problem, but programming is about building abstractions. Let's split it into re-usable functions:
+That's ok to solve that particular problem, but programming is about building abstractions, so let's split it into re-usable functions:
 
 ```coffeescript
 sum(xs: [a]): a where(a@Numeric) = xs.reduce(0, (+))
@@ -37,7 +38,7 @@ digits(n: Int): [Int] = n.str.chars.map(int)
 sum(digits(100.factorial)) #=> 648 : Int
 ```
 
-Note that now the final expression mimics exactly the formulation: "sum of the digits in the number 100!" becomes ```sum(digits(100.factorial))```.
+Notice that now, thanks to the abstractions and the language syntax, the final expression is able to mimic exactly the formulation of the problem.
 
 ### Functional sort
 
@@ -50,3 +51,4 @@ sort(xs: [a]): [a] where(a@Orderable) =
       smaller.sort ++ [pivot] ++ greater.sort
 
 [4, 3, 2, 5, 1].sort #=> [1, 2, 3, 4, 5] : [Int]
+```

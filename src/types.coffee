@@ -66,6 +66,7 @@ class Function extends TypeBase
       ("where(#{("#{k}@#{v}" for [k, v] in @restrictions)})") if _(@restrictions).isNotEmpty()
       "[trait #{@trait}]" if @trait
     ]).compact().join(" ")
+  toShortString: -> "#{@args.toString()} -> #{@result.toString()}"
   get_types: -> 
     [@args, @result]
   join: (namespace) ->
@@ -88,17 +89,21 @@ exports.buildType = buildType = (name, arity) ->
 ## Auxiliar functions
 
 exports.match_types = match_types = (expected, given) ->
+  #console.log("match_types", expected, given)
   if expected.variable and not given.variable
     _.mash([[expected, given]])
   else if expected.classname == given.classname
     expected_types = expected.get_types()
     given_types = given.get_types()
     if expected_types.constructor.name == "Array"
-      namespaces = (match_types(e, g) for [e, g] in _.zip(expected_types, given_types))
-      if _.all(namespaces, _.identity)
-        _.freduce namespaces, {}, (acc, namespace) -> _.merge(acc, namespace)
-      else
+      if expected_types.length != given_types.length
         false
+      else
+        namespaces = (match_types(e, g) for [e, g] in _.zip(expected_types, given_types))
+        if _.all(namespaces, _.identity)
+          _.freduce namespaces, {}, (acc, namespace) -> _.merge(acc, namespace)
+        else
+          false
     else
       {}
   else
