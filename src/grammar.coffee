@@ -42,7 +42,7 @@ grammar =
   ]
   
   TraitImplementation: [
-    o 'TRAIT CAPID CAPID INDENT TraitImplementationFunctionList DEDENT', 
+    o 'TRAIT CAPID Type INDENT TraitImplementationFunctionList DEDENT', 
         -> new TraitImplementation($2, $3, $5)
   ]
   

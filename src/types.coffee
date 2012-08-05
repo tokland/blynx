@@ -82,6 +82,7 @@ exports.buildType = buildType = (name, arity) ->
         msg = "type '#{this.inspect()}' has arity #{@arity} but #{args.length} arguments given"
         error("InternalError", msg)
       super
+      @classname = name
     name: name
     arity: arity
     toString: -> lib.optionalParens(name, @args)
@@ -89,8 +90,10 @@ exports.buildType = buildType = (name, arity) ->
 ## Auxiliar functions
 
 exports.match_types = match_types = (expected, given) ->
-  #console.log("match_types", expected, given)
+  #console.log("match_types", expected, expected.classname, "---", given, given.classname)
   if expected.variable and not given.variable
+    _.mash([[expected, given]])
+  else if expected.variable and given.variable
     _.mash([[expected, given]])
   else if expected.classname == given.classname
     expected_types = expected.get_types()

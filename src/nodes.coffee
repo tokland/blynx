@@ -303,14 +303,15 @@ class SymbolTypeDefinition
       [def.name, type]
 
 class TraitImplementation
-  constructor: (@trait_name, @type_name, @bindings) ->
+  constructor: (@trait_name, @type, @bindings) ->
   process: (env) ->
-    trait_env = env.in_context({trait: @trait_name, type: @type_name})
+    trait_env = env.in_context(trait: @trait_name, type: @type.process(env).type)
     bindings = (node.process(trait_env).type for node in @bindings)
     {env}
   compile: (env) -> 
-    header = "// trait #{@trait_name} of #{@type_name}"
-    trait_env = env.in_context(trait: @trait_name, type: @type_name)
+    type = @type.process(env).type
+    header = "// trait #{@trait_name} of #{type.name}"
+    trait_env = env.in_context(trait: @trait_name, type: type)
     header + "\n" + (node.compile(trait_env) for node in @bindings) + "\n"
 
 ##

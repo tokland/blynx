@@ -54,7 +54,10 @@ class Environment
     args_type = new types.NamedTuple(args_ns)
     function_type = new types.Function(args_type, result_type, null, [])
     if (trait = @get_context("trait"))
-      if not types.match_types(@bindings[name], function_type)
+      namespace = types.match_types(@bindings[name], function_type)
+      tv = @traits[trait].typevar
+      type = @get_context("type")
+      if not namespace or not types.match_types(namespace[tv], type)  
         error("TypeError", "Cannot match type of function '#{name}' for trait " +
           "'#{trait}' #{@bindings[name].toShortString()} with the definition #{function_type}")
     else
