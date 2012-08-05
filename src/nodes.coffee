@@ -3,7 +3,7 @@ types = require './types'
 _ = require('./underscore_extensions')
 {error, debug} = lib
 
-translate_table =
+symbol_to_string_table =
   "=": "equal"
   "+": "plus"
   "-": "minus"
@@ -20,13 +20,19 @@ translate_table =
   "|": "pipe"
  
 valid_varname = (s) ->
-  ((if translate_table[c] then "__#{translate_table[c]}" else c) for c in s).join("")
+  table = symbol_to_string_table
+  ((if table[c] then "__#{table[c]}" else c) for c in s).join("")
    
 exports.FunctionCallFromID = (name, args, options = {}) ->
   name2 = if options.unary then "#{name}_unary" else name
   args2 = (new FunctionArgument("", arg) for arg in args)
   new FunctionCall(new Symbol(name2), args2)
 
+exports.node = (class_name, args...) ->
+  klass = exports[class_name] or
+    error("InternalError", "Cannot find node '#{class_name}'")
+  new klass(args...)
+  
 class Root
   constructor: (@nodes) ->
   compile_with_process: (env) ->
@@ -329,8 +335,3 @@ lib.exportClasses(exports, [
   Comment
   TraitInterface, TraitImplementation, SymbolTypeDefinition
 ])
-
-exports.node = (class_name, args...) ->
-  klass = exports[class_name] or
-    error("InternalError", "Cannot find node '#{class_name}'")
-  new klass(args...)
