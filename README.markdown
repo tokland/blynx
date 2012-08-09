@@ -1,4 +1,4 @@
-Blynx is a statically-typed functional language that transcompiles to Javascript. 
+Blynx is a functional statically-typed language that transcompiles to Javascript. 
 
 State: _in development_ (alpha ~ Jan/2013)
 

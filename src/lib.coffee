@@ -1,8 +1,6 @@
 #!/usr/bin/coffee
 _ = require './underscore_extensions'
 
-# Common
-
 exports.debug = (args...) -> 
   console.error.apply(this, args)
 
@@ -17,6 +15,12 @@ exports.indent = (nspaces, text) ->
   indentation = _.repeat(" ", nspaces).join("")
   indentation + text
 
+exports.getClass = (obj) -> 
+  obj.constructor
+
+exports.optionalParens = (name, args) ->
+  name + (if _(args).isNotEmpty() then "(#{args.join(', ')})" else "")
+  
 # Lexer
 
 exports.simpleTokens = (tokens) ->
@@ -44,8 +48,8 @@ exports.recursiveGrammarItem = (rule, options = {}) ->
   join = options.join
   rule_list = options.name
   _.compact([
-    (o("", -> []) if options.min == 0)
-    (o(rule, -> [$1]) if options.min <= 1)
+    o("", -> []) if options.min == 0
+    o(rule, -> [$1]) if options.min <= 1
     if join then o("#{rule_list} #{join} #{rule}", -> $1.concat($3)) \
             else o("#{rule_list} #{rule}", -> $1.concat($2))
   ])
@@ -63,9 +67,3 @@ exports.indent_code = (source) ->
     state.output.push(line)
     _(state).merge(indent: new_indent, output: state.output)
   ).output.join("\n")
-  
-exports.getClass = (obj) -> 
-  obj.constructor
-
-exports.optionalParens = (name, args) ->
-  name + (if _(args).isNotEmpty() then "(#{args.join(', ')})" else "")
