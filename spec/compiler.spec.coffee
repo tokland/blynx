@@ -332,9 +332,29 @@ tests = [
 
     x = str(Red)
     y = str(Active)
-    renamed_str = str
   """, should_have(values: {x: "UntilWeCanMatch", y: "State"}, 
                    bindings: {x: "String", y: "String"})]
+
+  ["""
+    traitinterface Showable a
+      str1: (a) -> String
+      str2(x: a): String = "str2"
+      str3 = str2
+      str4 =
+        y = str3
+        y
+      
+    type Semaphore = Red | Yellow | Green
+    trait Showable Semaphore
+      str1(semaphore: Semaphore): String = "Semaphore" 
+      str3(semaphore: Semaphore): String = "Semaphore3"
+
+    x = str1(Red)
+    y = str2(Yellow)
+    z = str3(Green)
+    zz = str4(Green)
+  """, should_have(values: {x: "Semaphore", y: "str2", z: "Semaphore3", zz: "Semaphore3"}, 
+                   bindings: {x: "String", y: "String", z: "String"})]
 
   ["""
     traitinterface Showable a
