@@ -97,7 +97,7 @@ filterTokens = (tokens) ->
     tokens.push(["EOF", "", last_token[2]])
   
   # Add tokens INDENT/DEDENT from WHITESPACE tokens 
-  for token, index in tokens 
+  for token, index in tokens
     output_tail = if token[0] == "WHITESPACE" then [] else [token]
     new_state = if state.start_line
       new_indent = if token[0] == "WHITESPACE" then token[1].length else 0

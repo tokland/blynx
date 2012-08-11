@@ -4,7 +4,7 @@ State: _in development_ (alpha ~ Jan/2013)
 
 # Features
 
-  * Functional (side-effects allowed but controlled).
+  * Functional (impure, side-effects are allowed but controlled).
   * Statically typed.
   * Common types built-in: boolean, integer, float, string, list, array, dictionary, tuple.
   * Algebraic data types.

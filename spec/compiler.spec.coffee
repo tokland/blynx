@@ -8,8 +8,6 @@ should_throw = (error) -> {_should_throw: true, error}
 should_have = (what) -> _(what).merge(_should_have: true)
   
 tests = [
-  ["", undefined]
-  
   # Pre-defined types
 
   ["x = 1", should_have(bindings: {x: "Int"})]
@@ -332,29 +330,32 @@ tests = [
 
     x = str(Red)
     y = str(Active)
-  """, should_have(values: {x: "UntilWeCanMatch", y: "State"}, 
+  """, should_have(values: {x: "Semaphore", y: "State"}, 
                    bindings: {x: "String", y: "String"})]
 
   ["""
     traitinterface Showable a
       str1: (a) -> String
-      str2(x: a): String = "str2"
+      str2(x: a): String = "Showable2"
       str3 = str2
       str4 =
         y = str3
         y
-      
-    type Semaphore = Red | Yellow | Green
-    trait Showable Semaphore
-      str1(semaphore: Semaphore): String = "Semaphore" 
-      str3(semaphore: Semaphore): String = "Semaphore3"
 
-    x = str1(Red)
-    y = str2(Yellow)
-    z = str3(Green)
-    zz = str4(Green)
-  """, should_have(values: {x: "Semaphore", y: "str2", z: "Semaphore3", zz: "Semaphore3"}, 
-                   bindings: {x: "String", y: "String", z: "String"})]
+    type Semaphore = Red | Yellow | Green
+    external_str(semaphore: Semaphore): String = "external_str"
+    
+    trait Showable Semaphore
+      str1(semaphore: Semaphore): String = "Semaphore1" 
+      str3 = external_str
+
+    a = str1(Red)
+    b = str2(Yellow)
+    c = str3(Green)
+    d = str4(Red)
+  """, should_have
+    values: {a: "Semaphore1", b: "Showable2", c: "external_str", d: "external_str"} 
+    bindings: {a: "String", b: "String", c: "String", d: "String"}]
 
   ["""
     traitinterface Showable a
@@ -369,7 +370,7 @@ tests = [
     renamed_str = str
     x = renamed_str(Red)
     y = renamed_str(Active)
-  """, should_have(values: {x: "UntilWeCanMatch", y: "State"}, 
+  """, should_have(values: {x: "Semaphore", y: "State"}, 
                    bindings: {x: "String", y: "String"})]
 
   ["""
@@ -407,15 +408,17 @@ describe "compiler", ->
         else if expected._should_have
           if (bindings = expected.bindings)
             for name, expected_type_string of bindings
-              it "'#{name}' should have type '#{expected_type_string}'", ->
-                {env} = compiler.compile(source)
-                type_string = env.get_binding(name).inspect()
-                assert.deepEqual(type_string, expected_type_string, "Failed on:\n#{source}")
+              do (name, expected_type_string) ->
+                it "'#{name}' should have type '#{expected_type_string}'", ->
+                  {env} = compiler.compile(source)
+                  type_string = env.get_binding(name).inspect()
+                  assert.deepEqual(type_string, expected_type_string, "Failed on:\n#{source}")
           if (values = expected.values)
             for name, expected_value of values
-              it "'#{name}' should have value '#{expected_value}'", ->
-                {context, value} = compiler.run(source)
-                assert.deepEqual(context[name], expected_value, "Failed on:\n#{source}")
+              do (name, expected_value) ->
+                it "'#{name}' should have value '#{expected_value}'", ->
+                  {context, value} = compiler.run(source)
+                  assert.deepEqual(context[name], expected_value, "Failed on:\n#{source}")
       else
         it "should compile:\n\n#{source}", ->
           {value} = compiler.run(source)

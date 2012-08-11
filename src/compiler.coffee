@@ -16,21 +16,22 @@ class Environment
     new Environment(all_fields) 
   inspect: ->
     print_name = (name) -> if name.match(/[a-z_]/i) then name else "(#{name})"
-    types = (indent(4, "#{name}: #{type.traits.join(', ')}") for name, type of @types)
-    traits = (indent(4, "#{name}: #{_.keys(trait.bindings).join(', ')}") for name, trait of @traits)
+    types0 = (indent(4, "#{name}: #{type.traits.join(', ')}") for name, type of @types)
+    traits = (indent(4, "#{name}: #{trait.bindings.join(', ')}") for name, trait of @traits)
     bindings = (indent(4, "#{print_name(k)}: #{v}") for k, v of @bindings)
     
     [
       "---"
       "Environment:" 
-      "  Types: " + (if _(@types).isEmpty() then "none" else "\n" + types.join("\n")) 
+      "  Types: " + (if _(@types).isEmpty() then "none" else "\n" + types0.join("\n")) 
       "  Traits: " + (if _(@traits).isEmpty() then "none" else "\n" + traits.join("\n"))
       "  Bindings: " + (if _(@bindings).isEmpty() then "none" else "\n"+bindings.join("\n"))
       "---"
     ].join("\n")
-  add_binding: (name, type, traits = [], options = {}) ->
+  add_binding: (name, type, options = {}) ->
     if @bindings[name]
-      msg = options.error_msg or "symbol '#{name}' already bound to type '#{@bindings[name]}'"  
+      msg = options.error_msg or 
+        "symbol '#{name}' already bound to type '#{@bindings[name]}'"  
       error("BindingError", msg)
     new_bindings = _.merge(@bindings, _.mash([[name, type]]))
     @clone(bindings: new_bindings)
@@ -49,27 +50,28 @@ class Environment
     type = @types[name] or
       error("TypeError", "undefined type '#{name}'")
     type.klass
-  add_function_binding: (name, args, result_type, traits) ->
+  add_function_binding: (name, args, result_type, restrictions) ->
     args_ns = ([arg.name, arg.process(this).type] for arg in args)
     args_type = new types.NamedTuple(args_ns)
-    function_type = new types.Function(args_type, result_type, null, [])
-    if (trait = @get_context("trait"))
+    trait = @get_context("trait")
+    function_type = new types.Function(args_type, result_type, trait, restrictions)
+    if not @get_context("trait_interface") and trait
       namespace = types.match_types(@bindings[name], function_type)
       tv = @traits[trait].typevar
       type = @get_context("type")
       if not namespace or not types.match_types(namespace[tv], type)  
         error("TypeError", "Cannot match type of function '#{name}' for trait " +
-          "'#{trait}' #{@bindings[name].toShortString()} with the definition #{function_type}")
+          "'#{trait}' #{@bindings[name].toShortString()} with " +
+          "the definition #{function_type.toShortString()}")
+      {env: this, type: function_type}
     else
-      @add_binding(name, function_type, traits)
+      {env: @add_binding(name, function_type), type: function_type} 
   add_trait: (name, typevar, bindings) ->
     if name of @traits
       error("TypeError", "Trait '#{name}' already defined")
     trait = {typevar, bindings}
     new_trait_bindings = _.mash([[name, trait]])
-    new_env = _(_.pairs(bindings)).freduce this, (env, [name, binding]) ->
-      env.add_binding(name, binding)
-    new_env.clone(traits: _.merge(@traits, new_trait_bindings))
+    @clone(traits: _.merge(@traits, new_trait_bindings))
   get_context: (name) ->
     if @context then @context[name] else null
   in_context: (new_context) ->
@@ -102,11 +104,12 @@ exports.compile = compile = (source, options = {}) ->
   env = _(["Int", "Float", "String"]).freduce new Environment, (e, name) ->
     e.add_type(name, types[name], [])
   {env: final_env, output} = getAST(source, options).compile_with_process(env)
-  process.stderr.write(final_env.inspect()+"\n") if options.debug 
-  {env: final_env, output: output + "\n"}
+  process.stderr.write(final_env.inspect()+"\n") if options.debug
+  complete_output = "api = require('api');\n\n" + output + "\n" 
+  {env: final_env, output: complete_output}
   
 exports.run_js = run_js = (jscode, base_context = null) ->  
-  sandbox = {api: require('./api'), console: console}
+  sandbox = {console: console, require: require}
   context = base_context or vm.createContext(sandbox)
   value = vm.runInContext(jscode, context)
   {context, value}

@@ -7,14 +7,16 @@ grammar =
     ['Lines EOF', 'return new yy.Root($1);']
   ]
 
-  Lines: 
-    r 'Line', name: 'Lines', min: 1
+  Lines: [
+    o 'Line TERMINATOR', -> [$1]
+    o 'Line TERMINATOR Lines', -> [$1].concat($3)
+  ]
 
   Line: [
-    o 'COMMENT TERMINATOR', -> new Comment($1)
-    o 'Statement TERMINATOR'
-    o 'Expression TERMINATOR', -> new StatementExpression($1)
-    o 'TERMINATOR'
+    o 'COMMENT', -> new Comment($1)
+    o 'Statement'
+    o 'Expression', -> new StatementExpression($1)
+    o ''
   ]
 
   Block: [
@@ -45,13 +47,26 @@ grammar =
     o 'TRAIT CAPID Type INDENT TraitImplementationFunctionList DEDENT', 
         -> new TraitImplementation($2, $3, $5)
   ]
-  
-  TraitImplementationFunctionList:
-    r 'TraitImplementationFunction TERMINATOR', min: 1
-  
+
+  SymbolTypeDefinition: [
+    o 'ID : Type', -> new SymbolTypeDefinition($1, $3)
+    o 'FunctionBinding' 
+    o 'SymbolBinding'
+  ]
+
   TraitImplementationFunction: [
     o 'FunctionBinding'
     o 'SymbolBinding'
+  ]
+
+  SymbolTypeDefinitionList: [
+    o 'SymbolTypeDefinition TERMINATOR', -> [$1]
+    o 'SymbolTypeDefinition TERMINATOR SymbolTypeDefinitionList', -> [$1].concat($3)
+  ]
+  
+  TraitImplementationFunctionList: [
+    o 'TraitImplementationFunction TERMINATOR', -> [$1]
+    o 'TraitImplementationFunction TERMINATOR TraitImplementationFunctionList', -> [$1].concat($3)
   ]
   
   TypeTraits: [
@@ -61,13 +76,6 @@ grammar =
   
   CapIdList: 
     r 'CAPID', min: 1, join: ',', name: 'CapIdList'
-  
-  SymbolTypeDefinitionList:
-    r 'SymbolTypeDefinition', min: 1
-  
-  SymbolTypeDefinition: [
-    o 'ID : Type TERMINATOR', -> new SymbolTypeDefinition($1, $3) 
-  ]
   
   TypeArguments:
     r 'TypeVariable', name: "TypeArguments", min: 1, join: ','

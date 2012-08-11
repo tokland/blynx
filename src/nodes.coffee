@@ -47,17 +47,24 @@ class SymbolBinding
   constructor: (@name, @block) ->
   process: (env) -> 
     type = @block.process(env).type
-    {env: env.add_binding(@name, type, []), type}
+    new_env = if env.get_context("type") then env else env.add_binding(@name, type)
+    {env: new_env, type}
   compile: (env) ->
-    name = valid_varname(@name)
-    if lib.getClass(@block) == Expression
-      "var #{name} = #{@block.compile(env)};"
+    name = (if !env.get_context("nested") and env.get_context("trait") then "_" else "") + valid_varname(@name)
+    type = @block.process(env).type
+    env2 = env.in_context(_(env.context).merge(nested: true))
+    value = if lib.getClass(@block) == Expression
+      @block.compile(env2)
     else
       """
-        var #{name} = (function() {>>
-          #{@block.compile(env, return: true)}<<
-        }).call(this);
+        (function() {>>
+          #{@block.compile(env2, return: true)}<<
+        }).call(this)
       """
+    if !env.get_context("nested") and (env.get_context("trait_interface") or env.get_context("type"))
+      "var #{name} = api.wrap(function() { return #{value}; });"
+    else 
+      "var #{name} = #{value};"
 
 ## Functions
 
@@ -66,7 +73,7 @@ class FunctionBinding
     @name = if options.unary then "#{name}_unary" else name
   get_block_env: (env) ->
     _.freduce @args, env, (block_env, arg) ->
-      block_env.add_binding(arg.name, arg.process(env).type, [], 
+      block_env.add_binding(arg.name, arg.process(env).type, 
         error_msg: "argument '#{arg.name}' already defined in function binding")
   process: (env) ->
     block_env = @get_block_env(env)
@@ -75,23 +82,22 @@ class FunctionBinding
     unless namespace = types.match_types(block_type, result_type)
       msg = "function '#{@name}' should return '#{result_type}' but returns '#{block_type}'"
       error("TypeError", msg)
-    new_env = env.add_function_binding(@name, @args, result_type, [])
-    {env: new_env, type: result_type}
+    env.add_function_binding(@name, @args, result_type, env.get_context("restrictions") or [])
   compile: (env) -> 
     block_env = @get_block_env(env)
     js_args = _(@args).pluck("name").join(', ')
-    ctype = env.get_context('type')
-    vname = valid_varname(@name)
-    fname = if ctype then "#{vname}.#{ctype}" else "var #{vname}"
-    
-    if lib.getClass(@block) == Block
+    value = if lib.getClass(@block) == Block
       """
-        #{fname} = function(#{js_args}) {>>
+        function(#{js_args}) {>>
           #{@block.compile(block_env, return: true)}<<
-        };
+        }
       """
     else
-      "#{fname} = function(#{js_args}) { return #{@block.compile(block_env)}; };"
+      "function(#{js_args}) { return #{@block.compile(block_env)}; }"
+    if env.get_context('type') or env.get_context("trait_interface")
+      "var _#{valid_varname(@name)} = #{value};"
+    else
+      "var #{valid_varname(@name)} = #{value};"
 
 class TypedArgument
   constructor: (@name, @type) ->
@@ -144,7 +150,9 @@ class Block
     {env, type}
   compile: (env, options = {}) ->
     _(options).defaults(return: false)
-    compiled = _(@nodes).invoke("compile", env)
+    compiled = for node in @nodes
+      {env, type} = node.process(env, options)
+      node.compile(env)
     last_expr = _.last(compiled)
     tail = if options.return then ["return #{last_expr}"] else [last_expr]
     _(compiled[0...-1]).concat(tail).join("\n")
@@ -157,7 +165,12 @@ class StatementExpression
 class Symbol
   constructor: (@name) ->
   process: (env) -> {env, type: env.get_binding(@name)}
-  compile: (env) -> valid_varname(@name)
+  compile: (env) ->
+    type = env.get_binding(@name)
+    if (trait = env.get_context("trait")) and _(env.traits[trait].bindings).include(@name)
+      "#{valid_varname(@name)}[type]"
+    else
+      valid_varname(@name)
 
 class FunctionArgument
   constructor: (@name, @value) ->
@@ -201,13 +214,16 @@ class FunctionCall
     key_to_index = _.mash([k, i] for [k, v], i in type.args.args)
     sorted_args = _.sortBy(@args, (arg) -> parseInt(key_to_index[arg.name]))
     fname = valid_varname(@fexpr.compile(env))
-    complete_fname = if type.trait
-      [type_for_trait, trait] = 
+    complete_fname = if type.trait and not env.get_context("trait_interface")
+      [type_for_trait, trait] =
         _.first([t, trait] for [t, trait] in type.restrictions when trait == type.trait) or
         error("InternalError", "Cannot find type for trait '#{trait}'")
-      if type_for_trait.variable
-        error("TypeError", "Restriction '#{type_for_trait}@#{trait}' fails")
-      "#{fname}.#{type_for_trait}"
+      #if type_for_trait.variable
+      #  error("TypeError", "Restriction '#{type_for_trait}@#{trait}' fails"
+      if env.get_context("trait_interface")
+        "#{fname}[type]"
+      else
+        "#{fname}.#{type_for_trait}"
     else
       fname
     complete_fname + "(" + (arg.compile(env) for arg in sorted_args).join(', ') + ")"
@@ -246,7 +262,7 @@ class TypeDefinition
     type = types.buildType(@name, @args.length)
     env_with_type = env.add_type(@name, type, @traits)
     new_env = _.freduce @constructors, env_with_type, (e, constructor) ->
-      constructor.add_binding(e, type, args, [])
+      constructor.add_binding(e, type, args)
     {env: new_env}
   compile: (env) ->
     "// type #{@name}\n" +
@@ -263,9 +279,9 @@ class TypeConstructorDefinition
       "var #{@name} = function(#{names.join(', ')}) { return #{val}; };"
   add_binding: (env, type, type_args) ->
     binding_type = if _(@args).isEmpty()
-      env.add_binding(@name, new type(type_args), []) 
+      env.add_binding(@name, new type(type_args)) 
     else
-      env.add_function_binding(@name, @args, new type(type_args), [])
+      env.add_function_binding(@name, @args, new type(type_args), env.get_context("restrictions") or []).env
 
 ##
 
@@ -281,31 +297,45 @@ class TraitInterface
   process: (env) ->
     trait_env = env.in_context
       trait: @name
+      trait_interface: true
       typevar: @typevar.process(env).type
       restrictions: [[@typevar.process(env).type, @name]]
-    bindings = SymbolTypeDefinition.bindings(trait_env, @symbol_type_definitions)
-    new_env = env.add_trait(@name, @typevar.name, bindings)
+    {env: env2, bindings} = SymbolTypeDefinition.bindings(trait_env, @symbol_type_definitions)
+    new_env = env2.add_trait(@name, @typevar.name, bindings).in_context({})
     {env: new_env}
   compile: (env) -> 
-    "// traitinterface #{@name}\n" + 
-      (def.compile(env) for def in @symbol_type_definitions).join("\n") + "\n"
+    trait_env = env.in_context
+      trait: @name
+      trait_interface: true
+      typevar: @typevar.process(env).type
+      restrictions: [[@typevar.process(env).type, @name]]
+    sets = (def for def in @symbol_type_definitions when lib.getClass(def) != SymbolTypeDefinition)      
+    ("var #{valid_varname(def.name)} = {};" for def in @symbol_type_definitions).join("\n") + "\n" +
+      "// traitinterface #{@name}\n" + 
+      "var #{@name} = function(type) {>>\n" +
+        (def.compile(trait_env) \
+         for def in @symbol_type_definitions when lib.getClass(def) != SymbolTypeDefinition).join("\n") + "\n" +
+      "return {#{("#{def.name}: _#{def.name}" for def in sets).join(', ')}};<<\n" +
+      "};"
+      
 
 class SymbolTypeDefinition
   constructor: (@name, @type) ->
   process: (env) ->
     type = @type.process(env).type
-    new_env = env.add_binding(@name, type, [])
+    new_env = env.add_binding(@name, type)
     {env: new_env, type: type}
   compile: (env) ->
-    "var #{@name} = {};"    
+    "// #{@name}: #{@type.process(env).type.toShortString()}"    
   @bindings: (env, symbol_type_definitions) ->
-    _.mash _(symbol_type_definitions).map (def) ->
-      type = def.process(env).type
-      typevar = env.get_context("typevar")
+    _.freduce symbol_type_definitions, {env, bindings: []}, (obj, def) ->
+      type = def.process(obj.env).type
+      typevar = obj.env.get_context("typevar")
       if not _.any(type.get_all_types(), (t) -> t.name == typevar.name)
-        error("TypeError", "Function '#{def.name}' for trait '#{env.get_context('trait')}' " +
+        error("TypeError", "Function '#{def.name}' for trait '#{obj.env.get_context('trait')}' " +
           "does not mention type variable '#{typevar}'")
-      [def.name, type]
+      {env: obj.env.add_binding(def.name, type), bindings: _(obj.bindings).concat([def.name])}
+
 
 class TraitImplementation
   constructor: (@trait_name, @type, @bindings) ->
@@ -315,9 +345,16 @@ class TraitImplementation
     {env}
   compile: (env) -> 
     type = @type.process(env).type
-    header = "// trait #{@trait_name} of #{type.name}"
     trait_env = env.in_context(trait: @trait_name, type: type)
-    header + "\n" + (node.compile(trait_env) for node in @bindings) + "\n"
+    skip = _.mash([b.name, true] for b in @bindings)
+    "// trait #{@trait_name} of #{type.name} \n" + 
+      "var #{@trait_name}_#{type.name} = function() {>>\n" +  
+        ("#{b.compile(trait_env)}" for b in @bindings).join("\n") + "\n" +
+        "return {#{("#{b.name}: _#{b.name}" for b in @bindings).join(', ')}};" + "<<\n" +
+      "};\n" +
+      "var _#{@trait_name}_#{type.name} = api.merge(#{@trait_name}(#{JSON.stringify(type.name)}), #{@trait_name}_#{type.name}());" + "\n" +
+      ("#{b}.#{type.name} = _#{@trait_name}_#{type.name}.#{b};" \
+        for b in env.traits[@trait_name].bindings).join("\n") + "\n"
 
 ##
 
