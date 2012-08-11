@@ -20,6 +20,22 @@ exports.getClass = (obj) ->
 
 exports.optionalParens = (name, args) ->
   name + (if _(args).isNotEmpty() then "(#{args.join(', ')})" else "")
+
+exports.symbol_to_string_table =
+  "=": "equal"
+  "+": "plus"
+  "-": "minus"
+  "^": "circumflex"
+  "~": "tilde" 
+  "<": "less"
+  ">": "more"
+  "!": "exclamation",
+  ":": "colon"
+  "*": "mul"
+  "/": "div"
+  "%": "percent"
+  "&": "ampersand"
+  "|": "pipe"
   
 # Lexer
 

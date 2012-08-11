@@ -58,8 +58,8 @@ class NamedTuple extends TypeBase
 # Function
 
 class Function extends TypeBase
-  constructor: (@args, @result, @trait, @restrictions) ->
-    super
+  constructor: (@args, @result, @trait = null, @restrictions = []) ->
+    super(@args)
   toString: ->
     _([
       "#{@args.toString()} -> #{@result.toString()}"

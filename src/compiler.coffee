@@ -50,7 +50,8 @@ class Environment
     type = @types[name] or
       error("TypeError", "undefined type '#{name}'")
     type.klass
-  add_function_binding: (name, args, result_type, restrictions) ->
+  add_function_binding: (name, args, result_type) ->
+    restrictions = @get_context("restrictions") or []
     args_ns = ([arg.name, arg.process(this).type] for arg in args)
     args_type = new types.NamedTuple(args_ns)
     trait = @get_context("trait")
@@ -76,6 +77,20 @@ class Environment
     if @context then @context[name] else null
   in_context: (new_context) ->
     @clone(context: new_context)
+  is_trait_symbol: (name) ->
+    trait = @get_context("trait")
+    trait and _(@traits[trait].bindings).include(name)
+  is_inside_trait: ->
+    !!@get_context("trait")
+  in_trait_interface: (name, typevar) ->
+    restrictions = [[typevar, name]]
+    trait_env = @in_context
+      trait: name
+      trait_interface: true
+      restrictions: restrictions
+  function_type_in_context_trait: (ftype) ->
+    new types.Function(ftype.args, ftype.result, 
+      @get_context("trait"), @get_context("restrictions"))
     
 ##
 

@@ -346,7 +346,7 @@ tests = [
     external_str(semaphore: Semaphore): String = "external_str"
     
     trait Showable Semaphore
-      str1(semaphore: Semaphore): String = "Semaphore1" 
+      str1(semaphore: Semaphore): String = str2(semaphore) 
       str3 = external_str
 
     a = str1(Red)
@@ -354,7 +354,7 @@ tests = [
     c = str3(Green)
     d = str4(Red)
   """, should_have
-    values: {a: "Semaphore1", b: "Showable2", c: "external_str", d: "external_str"} 
+    values: {a: "Showable2", b: "Showable2", c: "external_str", d: "external_str"} 
     bindings: {a: "String", b: "String", c: "String", d: "String"}]
 
   ["""
