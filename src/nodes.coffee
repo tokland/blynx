@@ -19,7 +19,7 @@ symbol_to_string_table =
   "&": "ampersand"
   "|": "pipe"
  
-valid_varname = (s) ->
+jsname = (s) ->
   table = symbol_to_string_table
   ((if table[c] then "__#{table[c]}" else c) for c in s).join("")
    
@@ -49,7 +49,7 @@ class SymbolBinding
     type = @block.process(env).type
     {env: env.add_binding(@name, type), type}
   compile: (env) ->
-    "var #{valid_varname(@name)} = #{@compile_value(env)};"
+    "var #{jsname(@name)} = #{@compile_value(env)};"
   compile_value: (env) ->
     if lib.getClass(@block) == Expression
       @block.compile(env)
@@ -67,7 +67,7 @@ class TraitInterfaceSymbolBinding extends SymbolBinding
     type = @block.process(env).type
     {env: env.add_binding(@name, type), type}
   compile: (env) ->
-    name = "_" + valid_varname(@name)
+    name = "_" + jsname(@name)
     type = @block.process(env).type
     value = @compile_value(env)
     "var #{name} = api.wrap(function() { return #{value}; });"
@@ -79,7 +79,7 @@ class TraitImplementationSymbolBinding extends TraitInterfaceSymbolBinding
     type = @block.process(env).type # check type
     {env, type}
   compile: (env) ->
-    name = "_" + valid_varname(@name)
+    name = "_" + jsname(@name)
     type = @block.process(env).type
     value = @compile_value(env)
     "var #{name} = api.wrap(function() { return #{value}; });"
@@ -102,7 +102,7 @@ class FunctionBinding
       error("TypeError", msg)
     env.add_function_binding(@name, @args, result_type, env.get_context("restrictions") or [])
   compile: (env) -> 
-    "var #{valid_varname(@name)} = #{@compile_value(env)};"
+    "var #{jsname(@name)} = #{@compile_value(env)};"
   compile_value: (env) ->
     block_env = @get_block_env(env)
     js_args = _(@args).pluck("name").join(', ')
@@ -117,7 +117,7 @@ class FunctionBinding
 
 class TraitInterfaceFunctionBinding extends FunctionBinding
   compile: (env) -> 
-    "var _#{valid_varname(@name)} = #{@compile_value(env)};"
+    "var _#{jsname(@name)} = #{@compile_value(env)};"
 
 class TraitImplementationStatementBinding extends TraitInterfaceFunctionBinding
 
@@ -190,9 +190,9 @@ class Symbol
   compile: (env) ->
     type = env.get_binding(@name)
     if (trait = env.get_context("trait")) and _(env.traits[trait].bindings).include(@name)
-      "#{valid_varname(@name)}[type]"
+      "#{jsname(@name)}[type]"
     else
-      valid_varname(@name)
+      jsname(@name)
 
 class FunctionArgument
   constructor: (@name, @value) ->
@@ -235,7 +235,7 @@ class FunctionCall
     type = @match_types(env, function_type)
     key_to_index = _.mash([k, i] for [k, v], i in type.args.args)
     sorted_args = _.sortBy(@args, (arg) -> parseInt(key_to_index[arg.name]))
-    fname = valid_varname(@fexpr.compile(env))
+    fname = jsname(@fexpr.compile(env))
     complete_fname = if type.trait and not env.get_context("trait_interface")
       [type_for_trait, trait] =
         _.first([t, trait] for [t, trait] in type.restrictions when trait == type.trait) or
@@ -332,7 +332,7 @@ class TraitInterface
       typevar: @typevar.process(env).type
       restrictions: [[@typevar.process(env).type, @name]]
     sets = (def for def in @symbol_type_definitions when lib.getClass(def) != TraitInterfaceSymbolType)      
-    ("var #{valid_varname(def.name)} = {};" for def in @symbol_type_definitions).join("\n") + "\n" +
+    ("var #{jsname(def.name)} = {};" for def in @symbol_type_definitions).join("\n") + "\n" +
       "// traitinterface #{@name}\n" + 
       "var #{@name} = function(type) {>>\n" +
         (def.compile(trait_env) \
