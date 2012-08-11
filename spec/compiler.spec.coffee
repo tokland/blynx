@@ -1,6 +1,5 @@
 should = require 'should'
 assert = require 'assert'
-grammar = require 'grammar'
 compiler = require 'compiler'
 _ = require 'underscore_extensions'
 

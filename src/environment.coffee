@@ -1,6 +1,6 @@
-types = require './types'
-{debug, error} = require './lib'
-_ = require './underscore_extensions'
+types = require 'types'
+{debug, error} = require 'lib'
+_ = require 'underscore_extensions'
 
 class Environment
   constructor: (fields = {}) ->

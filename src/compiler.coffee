@@ -1,17 +1,17 @@
 vm = require 'vm'
-_ = require './underscore_extensions'
-types = require './types'
-lexer = require './lexer'
-nodes = require './nodes'
-grammar = require './grammar'
-environment = require './environment'
-lib = require './lib'
+_ = require 'underscore_extensions'
+types = require 'types'
+lexer = require 'lexer'
+nodes = require 'nodes'
+jison_parser = require 'parser'
+environment = require 'environment'
+lib = require 'lib'
 {debug, error, indent} = lib
    
 ##
 
 getParser = (options) ->
-  _(grammar.parser).merge
+  _(jison_parser.parser).merge
     yy: nodes
     lexer:
       lex: ->

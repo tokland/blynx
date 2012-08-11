@@ -1,5 +1,5 @@
 jison = require 'jison'
-{createGrammarItem: o, recursiveGrammarItem: r} = require './lib'
+{createGrammarItem: o, recursiveGrammarItem: r} = require 'lib'
 
 grammar =
   Root: [

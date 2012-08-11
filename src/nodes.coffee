@@ -1,7 +1,7 @@
 eco = require 'eco'
-lib = require './lib'
-types = require './types'
-_ = require './underscore_extensions'
+lib = require 'lib'
+types = require 'types'
+_ = require 'underscore_extensions'
 {error, debug} = lib
 
 render = (template, namespace) ->

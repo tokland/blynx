@@ -1,6 +1,6 @@
 #!/usr/bin/coffee
-_ = require('./underscore_extensions')
-lib = require './lib'
+_ = require('underscore_extensions')
+lib = require 'lib'
 {debug, error} = lib
 
 class TypeBase

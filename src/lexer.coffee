@@ -1,6 +1,6 @@
 #!/usr/bin/coffee
-_ = require './underscore_extensions'
-{debug, error} = require './lib'
+_ = require 'underscore_extensions'
+{debug, error} = require 'lib'
 
 # Escape special characters of regular expression in string: 'ab*' -> 'ab\\*'
 escapeRegExp = (s) -> 

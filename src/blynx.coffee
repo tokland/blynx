@@ -3,10 +3,10 @@ yanop = require 'yanop'
 fs = require 'fs'
 util = require 'util'
 path = require 'path'
-_ = require('./underscore_extensions')
-lexer = require('./lexer')
-compiler = require('./compiler')
-lib = require('./lib')
+_ = require('underscore_extensions')
+lexer = require('lexer')
+compiler = require('compiler')
+lib = require('lib')
 {error, debug} = lib
 
 compile = (source, options) ->

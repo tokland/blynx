@@ -1,5 +1,5 @@
 #!/usr/bin/coffee
-_ = require './underscore_extensions'
+_ = require 'underscore_extensions'
 
 exports.debug = (args...) -> 
   console.error.apply(this, args)
