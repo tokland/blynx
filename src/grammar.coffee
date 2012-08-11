@@ -39,34 +39,34 @@ grammar =
   ]
 
   TraitInterface: [
-    o 'TRAITINTERFACE CAPID TypeVariable INDENT SymbolTypeDefinitionList DEDENT', 
+    o 'TRAITINTERFACE CAPID TypeVariable INDENT TraitInterfaceStatementList DEDENT', 
         -> new TraitInterface($2, $3, $5)
   ]
   
   TraitImplementation: [
-    o 'TRAIT CAPID Type INDENT TraitImplementationFunctionList DEDENT', 
+    o 'TRAIT CAPID Type INDENT TraitImplementationStatementList DEDENT', 
         -> new TraitImplementation($2, $3, $5)
   ]
 
-  SymbolTypeDefinition: [
-    o 'ID : Type', -> new SymbolTypeDefinition($1, $3)
-    o 'FunctionBinding' 
-    o 'SymbolBinding'
-  ]
-
-  TraitImplementationFunction: [
-    o 'FunctionBinding'
-    o 'SymbolBinding'
-  ]
-
-  SymbolTypeDefinitionList: [
-    o 'SymbolTypeDefinition TERMINATOR', -> [$1]
-    o 'SymbolTypeDefinition TERMINATOR SymbolTypeDefinitionList', -> [$1].concat($3)
+  TraitInterfaceStatement: [
+    o 'ID : Type', -> new TraitInterfaceSymbolType($1, $3)
+    o 'FunctionBinding', -> new transformTo("TraitInterfaceFunctionBinding", $1) 
+    o 'SymbolBinding', -> new transformTo("TraitInterfaceSymbolBinding", $1)
   ]
   
-  TraitImplementationFunctionList: [
-    o 'TraitImplementationFunction TERMINATOR', -> [$1]
-    o 'TraitImplementationFunction TERMINATOR TraitImplementationFunctionList', -> [$1].concat($3)
+  TraitImplementationStatement: [
+    o 'FunctionBinding', -> new transformTo("TraitImplementationStatementBinding", $1)
+    o 'SymbolBinding', -> new transformTo("TraitImplementationSymbolBinding", $1)
+  ]
+
+  TraitInterfaceStatementList: [
+    o 'TraitInterfaceStatement TERMINATOR', -> [$1]
+    o 'TraitInterfaceStatement TERMINATOR TraitInterfaceStatementList', -> [$1].concat($3)
+  ]
+  
+  TraitImplementationStatementList: [
+    o 'TraitImplementationStatement TERMINATOR', -> [$1]
+    o 'TraitImplementationStatement TERMINATOR TraitImplementationStatementList', -> [$1].concat($3)
   ]
   
   TypeTraits: [

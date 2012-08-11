@@ -47,24 +47,42 @@ class SymbolBinding
   constructor: (@name, @block) ->
   process: (env) -> 
     type = @block.process(env).type
-    new_env = if env.get_context("type") then env else env.add_binding(@name, type)
-    {env: new_env, type}
+    {env: env.add_binding(@name, type), type}
   compile: (env) ->
-    name = (if !env.get_context("nested") and env.get_context("trait") then "_" else "") + valid_varname(@name)
-    type = @block.process(env).type
-    env2 = env.in_context(_(env.context).merge(nested: true))
-    value = if lib.getClass(@block) == Expression
-      @block.compile(env2)
+    "var #{valid_varname(@name)} = #{@compile_value(env)};"
+  compile_value: (env) ->
+    if lib.getClass(@block) == Expression
+      @block.compile(env)
     else
       """
         (function() {>>
-          #{@block.compile(env2, return: true)}<<
+          #{@block.compile(env, return: true)}<<
         }).call(this)
       """
-    if !env.get_context("nested") and (env.get_context("trait_interface") or env.get_context("type"))
-      "var #{name} = api.wrap(function() { return #{value}; });"
-    else 
-      "var #{name} = #{value};"
+
+class TraitInterfaceSymbolBinding extends SymbolBinding
+  constructor: (symbol_binding) ->
+    {@args, @block} = symbol_binding
+  process: (env) -> 
+    type = @block.process(env).type
+    {env: env.add_binding(@name, type), type}
+  compile: (env) ->
+    name = "_" + valid_varname(@name)
+    type = @block.process(env).type
+    value = @compile_value(env)
+    "var #{name} = api.wrap(function() { return #{value}; });"
+
+class TraitImplementationSymbolBinding extends TraitInterfaceSymbolBinding
+  constructor: (symbol_binding) ->
+    {@args, @block} = symbol_binding
+  process: (env) -> 
+    type = @block.process(env).type # check type
+    {env, type}
+  compile: (env) ->
+    name = "_" + valid_varname(@name)
+    type = @block.process(env).type
+    value = @compile_value(env)
+    "var #{name} = api.wrap(function() { return #{value}; });"
 
 ## Functions
 
@@ -84,9 +102,11 @@ class FunctionBinding
       error("TypeError", msg)
     env.add_function_binding(@name, @args, result_type, env.get_context("restrictions") or [])
   compile: (env) -> 
+    "var #{valid_varname(@name)} = #{@compile_value(env)};"
+  compile_value: (env) ->
     block_env = @get_block_env(env)
     js_args = _(@args).pluck("name").join(', ')
-    value = if lib.getClass(@block) == Block
+    if lib.getClass(@block) == Block
       """
         function(#{js_args}) {>>
           #{@block.compile(block_env, return: true)}<<
@@ -94,10 +114,12 @@ class FunctionBinding
       """
     else
       "function(#{js_args}) { return #{@block.compile(block_env)}; }"
-    if env.get_context('type') or env.get_context("trait_interface")
-      "var _#{valid_varname(@name)} = #{value};"
-    else
-      "var #{valid_varname(@name)} = #{value};"
+
+class TraitInterfaceFunctionBinding extends FunctionBinding
+  compile: (env) -> 
+    "var _#{valid_varname(@name)} = #{@compile_value(env)};"
+
+class TraitImplementationStatementBinding extends TraitInterfaceFunctionBinding
 
 class TypedArgument
   constructor: (@name, @type) ->
@@ -300,7 +322,7 @@ class TraitInterface
       trait_interface: true
       typevar: @typevar.process(env).type
       restrictions: [[@typevar.process(env).type, @name]]
-    {env: env2, bindings} = SymbolTypeDefinition.bindings(trait_env, @symbol_type_definitions)
+    {env: env2, bindings} = TraitInterfaceSymbolType.bindings(trait_env, @symbol_type_definitions)
     new_env = env2.add_trait(@name, @typevar.name, bindings).in_context({})
     {env: new_env}
   compile: (env) -> 
@@ -309,17 +331,17 @@ class TraitInterface
       trait_interface: true
       typevar: @typevar.process(env).type
       restrictions: [[@typevar.process(env).type, @name]]
-    sets = (def for def in @symbol_type_definitions when lib.getClass(def) != SymbolTypeDefinition)      
+    sets = (def for def in @symbol_type_definitions when lib.getClass(def) != TraitInterfaceSymbolType)      
     ("var #{valid_varname(def.name)} = {};" for def in @symbol_type_definitions).join("\n") + "\n" +
       "// traitinterface #{@name}\n" + 
       "var #{@name} = function(type) {>>\n" +
         (def.compile(trait_env) \
-         for def in @symbol_type_definitions when lib.getClass(def) != SymbolTypeDefinition).join("\n") + "\n" +
+         for def in @symbol_type_definitions when lib.getClass(def) != TraitInterfaceSymbolType).join("\n") + "\n" +
       "return {#{("#{def.name}: _#{def.name}" for def in sets).join(', ')}};<<\n" +
       "};"
       
 
-class SymbolTypeDefinition
+class TraitInterfaceSymbolType
   constructor: (@name, @type) ->
   process: (env) ->
     type = @type.process(env).type
@@ -358,6 +380,10 @@ class TraitImplementation
 
 ##
 
+exports.transformTo = (classname, instance) ->
+  instance.__proto__ = exports[classname].prototype
+  instance  
+
 lib.exportClasses(exports, [
   Root
   SymbolBinding, FunctionBinding, 
@@ -369,5 +395,8 @@ lib.exportClasses(exports, [
   Int, Float, String, Tuple
   TypeDefinition, TypeConstructorDefinition
   Comment
-  TraitInterface, TraitImplementation, SymbolTypeDefinition
+  TraitInterface, TraitInterfaceSymbolBinding, TraitImplementationSymbolBinding,
+  TraitInterfaceFunctionBinding, TraitImplementationStatementBinding
+  TraitInterfaceSymbolType, 
+  TraitImplementation
 ])
