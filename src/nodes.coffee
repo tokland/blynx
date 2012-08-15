@@ -288,15 +288,17 @@ class TraitInterface
     typevar = @typevar.process(env).type
     tenv = env.in_trait_interface(@name, typevar) 
     nodes = @trait_interface_statements
-    {env: env2, bindings} = _.freduce nodes, {env: tenv, bindings: []}, (obj, node) =>
+    {env: env2, methods, imethods} = _.freduce nodes, {env: tenv, methods: [], imethods: []}, (obj, node) =>
       type = node.process(obj.env).type
       if not _.any(type.get_all_types(), (t) -> t.name == typevar.name)
         error("TypeError", "Function '#{node.name}' for trait '#{@name}' " +
               "does not mention type variable '#{typevar}'")
       new_env = obj.env.add_binding(node.name, type)
-      new_bindings = _(obj.bindings).concat([node.name])              
-      {env: new_env, bindings: new_bindings}
-    new_env = env2.add_trait(@name, @typevar.name, bindings).in_context({})
+      new_methods = _(obj.methods).concat([node.name])
+      new_imethods = if lib.getClass(node) == TraitInterfaceSymbolType then obj.imethods \ 
+        else _(obj.imethods).concat([node.name])
+      {env: new_env, methods: new_methods, imethods: new_imethods}
+    new_env = env2.add_trait(@name, @typevar.name, methods, imethods).in_context({})
     {env: new_env}
   compile: (env) -> 
     typevar = @typevar.process(env).type
@@ -325,6 +327,12 @@ class TraitInterface
 class TraitImplementation
   constructor: (@trait_name, @type, @nodes) ->
   process: (env) ->
+    implemented_symbols = (node.name for node in @nodes)
+    trait = env.get_trait(@trait_name)
+    all_implemented_methods = _(trait.implemented_methods).union(implemented_symbols)
+    missing_methods = _(trait.methods).difference(all_implemented_methods)
+    if not _.isEmpty(missing_methods)
+      error("TypeError", "type '#{@type.name}' lacks implementations: #{missing_methods.join(', ')}")
     tenv = env.in_context(trait: @trait_name, type: @type.process(env).type)
     for node in @nodes
       node.process(tenv).type
@@ -345,7 +353,7 @@ class TraitImplementation
       
       var _<%= @trait %>_<%= @type %> = >>
         api.merge(<%= @trait %>(<%= @json(@type) %>), <%= @trait %>_<%= @type %>());<<
-      <% for bname in @env.traits[@trait].bindings: %>
+      <% for bname in @env.traits[@trait].methods: %>
         <%= bname %>.<%= @type %> = _<%= @trait %>_<%= @type %>.<%= bname %>; 
       <% end %>
     """,
