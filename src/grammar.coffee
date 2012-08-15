@@ -171,7 +171,8 @@ grammar =
   Symbol: [
     o 'ID', -> new Symbol($1)
     o 'CAPID', -> new Symbol($1)
-    o '( OpSymbol )', -> new Symbol($2)
+    o '( OpSymbol )', -> new Symbol($2, unary: false)
+    o '( $ OpSymbol )', -> new Symbol($3, unary: true)
   ]
   
   UnaryOp:
@@ -231,15 +232,15 @@ grammar =
   ]
   
 operators = [
-  ['nonassoc',  'INDENT', 'DEDENT']
+  ['nonassoc', 'INDENT', 'DEDENT']
   ['left', 'SYMBOL_AMPERSAND', '&', 'SYMBOL_PIPE', '|']
-  ['right', 'UNARY']
   ['left', 'SYMBOL_LESS', 'SYMBOL_MORE']
   ['left', 'SYMBOL_CIRCUMFLEX', 'SYMBOL_TILDE']
   ['left', 'SYMBOL_EQUAL', 'SYMBOL_EXCLAMATION', '!']
   ['right', 'SYMBOL_COLON']
   ['left', 'SYMBOL_PLUS', 'SYMBOL_MINUS']
   ['left', 'SYMBOL_MUL', 'SYMBOL_DIV', 'SYMBOL_PERCENT']
+  ['right', 'UNARY']
 ]
 
 exports.parser = new jison.Parser

@@ -431,26 +431,25 @@ describe "compiler", ->
   for test in tests
     [source, expected] = test
     do (source, expected) ->
-      if typeof expected == "object" 
-        if expected._should_throw
-          msg = expected.error
-          it "should throw exception:\n\n#{source}", ->
-            (-> compiler.compile(source)).
-              should.throw(msg, "Failed on #{source}")
-        else if expected._should_have
-          if (bindings = expected.bindings)
-            for name, expected_type_string of bindings
-              do (name, expected_type_string) ->
-                it "'#{name}' should have type '#{expected_type_string}'", ->
-                  {env} = compiler.compile(source)
-                  type_string = env.get_binding(name).inspect()
-                  assert.deepEqual(type_string, expected_type_string, "Failed on:\n#{source}")
-          if (values = expected.values)
-            for name, expected_value of values
-              do (name, expected_value) ->
-                it "'#{name}' should have value '#{expected_value}'", ->
-                  {context, value} = compiler.run(source)
-                  assert.deepEqual(context[name], expected_value, "Failed on:\n#{source}")
+      if expected._should_throw
+        msg = expected.error
+        it "should throw exception:\n\n#{source}", ->
+          (-> compiler.compile(source)).
+            should.throw(msg, "Failed on #{source}")
+      else if expected._should_have
+        if (bindings = expected.bindings)
+          for name, expected_type_string of bindings
+            do (name, expected_type_string) ->
+              it "'#{name}' should have type '#{expected_type_string}'", ->
+                {env} = compiler.compile(source)
+                type_string = env.get_binding(name).inspect()
+                assert.deepEqual(type_string, expected_type_string, "Failed on:\n#{source}")
+        if (values = expected.values)
+          for name, expected_value of values
+            do (name, expected_value) ->
+              it "'#{name}' should have value '#{expected_value}'", ->
+                {context, value} = compiler.run(source)
+                assert.deepEqual(context[name], expected_value, "Failed on:\n#{source}")
       else
         it "should compile:\n\n#{source}", ->
           {value} = compiler.run(source)

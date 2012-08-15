@@ -13,7 +13,8 @@ jsname = (s) ->
   table = lib.symbol_to_string_table
   ((if table[c] then "__#{table[c]}" else c) for c in s).join("")
 
-native_infix_operators = "+ - * / % < <= == > >= || &&".split(" ")
+native_binary_operators = "+ - * / % < <= == > >= || &&".split(" ")
+native_unary_operators = "+ - !".split(" ")
    
 ##
   
@@ -378,8 +379,10 @@ class TraitInterfaceSymbolType
 ##
 
 class Symbol
-  constructor: (@name) ->
-  compile: (env) -> @name 
+  constructor: (name, options = {}) -> 
+    @unary = !!options.unary
+    @name = if @unary then "#{name}_unary" else name
+  compile: (env) -> @name
 
 class Id
   constructor: (@name) ->
@@ -398,15 +401,24 @@ class External
     type = @type.process(env).type
     external_name = @external_name.compile(env)
     name = jsname(@symbol.name or external_name)
+    value = if @symbol.unary and _(native_unary_operators).include(external_name)
+      if lib.getClass(type) != types.Function or _.size(type.args.get_types()) != 1
+        error("TypeError", "Expected unary function, got '#{type}'")
+      "function(x) { return #{external_name} x; }"
+    else if _(native_binary_operators).include(external_name)
+      if lib.getClass(type) != types.Function or _.size(type.args.get_types()) != 2
+        error("TypeError", "Expected binary function, got '#{type}'")
+      "function(x, y) { return x #{external_name} y; }"
+    else
+      external_name
     "/* external #{external_name} */\n" +
-      (if name != external_name then "var #{name} = #{external_name};\n" else "") 
+      (if name != external_name then "var #{name} = #{value};\n" else "") 
 
 ##
 
 exports.FunctionCallFromID = (name, args, options = {}) ->
-  name2 = if options.unary then "#{name}_unary" else name
   args2 = (new FunctionArgument("", arg) for arg in args)
-  new FunctionCall(new SymbolReplacement(new Symbol(name2)), args2)
+  new FunctionCall(new SymbolReplacement(new Symbol(name, options)), args2)
 
 exports.node = (class_name, args...) ->
   klass = exports[class_name] or

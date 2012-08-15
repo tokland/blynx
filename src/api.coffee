@@ -10,7 +10,7 @@ merge = (obj, obj2) ->
 
 wrap = (fn) ->
   (args...) -> fn()(args...)
-
+  
 exports.merge = merge
 exports.extend = extend
 exports.wrap = wrap
