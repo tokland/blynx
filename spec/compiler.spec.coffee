@@ -396,6 +396,13 @@ tests = [
 
   ["""
     traitinterface Showable a
+      str1: (a) -> String
+    type Semaphore = Red | Yellow | Green
+    str1(Red)
+  """, should_throw("TypeError: type 'Semaphore' does not implement trait 'Showable'")]
+
+  ["""
+    traitinterface Showable a
       str: (a) -> String
     type Semaphore = Red | Yellow | Green
     trait Showable Semaphore

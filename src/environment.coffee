@@ -72,6 +72,16 @@ class Environment
     if @context then @context[name] else null
   in_context: (new_context) ->
     @clone(context: new_context)
+  check_restrictions: (type) ->
+    for [type_name, trait_name] in type.restrictions
+      if not _(@types[type_name].traits).include(trait_name)
+        error("TypeError", "type '#{type_name}' does not implement trait '#{trait_name}'")
+  add_trait_for_type: (type_name, trait_name) ->
+    type = @types[type_name] or error("TypeError", "No type with name '{type_name}'")
+    trait = @traits[trait_name] or error("TypeError", "No trait with name '{type_name}'")
+    new_traits_in_type = _(type.traits).concat([trait_name])
+    new_types = _(@types).mergePairs([[type_name, _(type).merge(traits: new_traits_in_type)]])
+    @clone(types: new_types)
   is_trait_symbol: (name) ->
     trait = @get_context("trait")
     trait and _(@traits[trait].methods).include(name)

@@ -196,9 +196,10 @@ class FunctionCall
 
     function_type = @fexpr.process(env).type
     check_function_type(function_type)
-    check_repeated_arguments()
     check_arguments_size(function_type)
     type = @match_types(env, function_type)
+    env.check_restrictions(type)
+    check_repeated_arguments()
     {env, type: type.result}
   compile: (env) ->
     function_type = @fexpr.process(env).type
@@ -333,10 +334,11 @@ class TraitImplementation
     missing_methods = _(trait.methods).difference(all_implemented_methods)
     if not _.isEmpty(missing_methods)
       error("TypeError", "type '#{@type.name}' lacks implementations: #{missing_methods.join(', ')}")
-    tenv = env.in_context(trait: @trait_name, type: @type.process(env).type)
+    new_env = env.add_trait_for_type(@type.name, @trait_name)
+    tenv = new_env.in_context(trait: @trait_name, type: @type.process(env).type)
     for node in @nodes
       node.process(tenv).type
-    {env}
+    {env: new_env}
   compile: (env) -> 
     type = @type.process(env).type
     tenv = env.in_context(trait: @trait_name, type: type)
