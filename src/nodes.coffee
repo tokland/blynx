@@ -12,6 +12,8 @@ render = (template, namespace) ->
 jsname = (s) ->
   table = lib.symbol_to_string_table
   ((if table[c] then "__#{table[c]}" else c) for c in s).join("")
+
+native_infix_operators = "+ - * / % < <= == > >= || &&".split(" ")
    
 ##
   
@@ -156,13 +158,13 @@ class StatementExpression
   process: (env) -> @value.process(env)
   compile: (env) -> "#{@value.compile(env)};"
   
-class Symbol
-  constructor: (@name) ->
+class SymbolReplacement
+  constructor: (@symbol) ->
   process: (env) -> 
-    {env, type: env.get_binding(@name)}
+    {env, type: env.get_binding(@symbol.name)}
   compile: (env) ->
-    name = jsname(@name)
-    if env.is_trait_symbol(@name) then "#{name}[type]" else name
+    name = jsname(@symbol.name)
+    if env.is_trait_symbol(@symbol.name) then "#{name}[type]" else name
 
 class FunctionArgument
   constructor: (@name, @value) ->
@@ -193,7 +195,6 @@ class FunctionCall
       if _.size(@args) != size
         msg = "function '#{@fexpr.compile(env)}' takes #{size} arguments but #{@args.length} given"
         error("ArgumentError", msg)
-
     function_type = @fexpr.process(env).type
     check_function_type(function_type)
     check_arguments_size(function_type)
@@ -376,10 +377,36 @@ class TraitInterfaceSymbolType
 
 ##
 
+class Symbol
+  constructor: (@name) ->
+  compile: (env) -> @name 
+
+class Id
+  constructor: (@name) ->
+  compile: (env) -> @name 
+
+class StringQ
+  constructor: (name) -> @name = name[1...-1]
+  compile: (env) -> @name 
+
+class External
+  constructor: (@external_name, @symbol, @type) ->
+  process: (env) ->
+    type = @type.process(env).type
+    {env: env.add_binding((@symbol or @external_name).name, type), type}
+  compile: (env) ->
+    type = @type.process(env).type
+    external_name = @external_name.compile(env)
+    name = jsname(@symbol.name or external_name)
+    "/* external #{external_name} */\n" +
+      (if name != external_name then "var #{name} = #{external_name};\n" else "") 
+
+##
+
 exports.FunctionCallFromID = (name, args, options = {}) ->
   name2 = if options.unary then "#{name}_unary" else name
   args2 = (new FunctionArgument("", arg) for arg in args)
-  new FunctionCall(new Symbol(name2), args2)
+  new FunctionCall(new SymbolReplacement(new Symbol(name2)), args2)
 
 exports.node = (class_name, args...) ->
   klass = exports[class_name] or
@@ -398,7 +425,7 @@ lib.exportClasses(exports, [
   TypedArgument, Type, TypeVariable, 
   TupleType, FunctionType
   Expression, ParenExpression, Block, StatementExpression
-  Symbol, 
+  Symbol, SymbolReplacement,
   FunctionCall, FunctionArgument
   Int, Float, String, Tuple
   TypeDefinition, TypeConstructorDefinition
@@ -406,5 +433,7 @@ lib.exportClasses(exports, [
   TraitInterface, TraitInterfaceSymbolBinding, TraitImplementationSymbolBinding,
   TraitInterfaceFunctionBinding, TraitImplementationStatementBinding
   TraitInterfaceSymbolType, 
-  TraitImplementation
+  TraitImplementation,
+  Id, StringQ,
+  External
 ])

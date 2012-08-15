@@ -54,6 +54,7 @@ tokensDefinition =
   WHITESPACE: /[ \t]+/
   
   STRING: /"(?:[^"\\]|\\.)*"/
+  STRINGQ: /'(?:[^'\\]|\\.)*'/
   COMMENT: /(?:#)(.*)/
   ID: /[a-z_]\w*/
   CAPID: /[A-Z]\w*/

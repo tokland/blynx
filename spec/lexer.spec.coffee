@@ -61,6 +61,9 @@ tests = [
   ['"hello \\"there\\""',
     """[STRING "hello \\"there\\""]"""]
 
+  ["'hello there'",
+    """[STRINGQ 'hello there']"""]
+
   ['x=1\n#my comment\n1',
     "[ID x] = [INTEGER 1] TERMINATOR [COMMENT my comment] TERMINATOR [INTEGER 1]"]
 

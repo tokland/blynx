@@ -40,7 +40,7 @@ exports.compile = compile = (source, options = {}) ->
   {env: final_env, output: complete_output}
   
 exports.run_js = run_js = (jscode, base_context = null) ->  
-  sandbox = {require: require}
+  sandbox = {require: require, escape: escape}
   context = base_context or vm.createContext(sandbox)
   value = vm.runInContext(jscode, context)
   {context, value}

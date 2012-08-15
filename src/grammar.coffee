@@ -29,6 +29,17 @@ grammar =
     o 'TraitImplementation'
     o 'SymbolBinding'
     o 'FunctionBinding'
+    o 'External'
+  ]
+  
+  External: [
+    o 'EXTERNAL String : Type', -> new External($2, "", $4)
+    o 'EXTERNAL String AS Symbol : Type', -> new External($2, $4, $6)
+  ]
+  
+  String: [
+    o 'ID', -> new Id($1)
+    o 'STRINGQ', -> new StringQ($1)
   ]
   
   TypeDefinition: [
@@ -134,7 +145,7 @@ grammar =
   ]
   
   InnerExpression: [
-    o 'Symbol'
+    o 'Symbol', -> new SymbolReplacement($1)
     o 'Value'
     o 'Value ( FunctionArgumentList )', -> new FunctionCall($1, $3)
     o 'Literal'
@@ -152,9 +163,9 @@ grammar =
   ]
 
   FunctionCall: [
-    o 'ID ( )', -> new FunctionCall(new Symbol($1), [])
-    o 'ID ( FunctionArgumentList )', -> new FunctionCall(new Symbol($1), $3)
-    o 'CAPID ( FunctionArgumentList )', -> new FunctionCall(new Symbol($1), $3)
+    o 'ID ( )', -> new FunctionCall(new SymbolReplacement(new Symbol($1)), [])
+    o 'ID ( FunctionArgumentList )', -> new FunctionCall(new SymbolReplacement(new Symbol($1)), $3)
+    o 'CAPID ( FunctionArgumentList )', -> new FunctionCall(new SymbolReplacement(new Symbol($1)), $3)
   ]  
   
   Symbol: [

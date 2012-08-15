@@ -408,6 +408,23 @@ tests = [
     trait Showable Semaphore
       str(semaphore: Semaphore, x: Int): String = "SemaphoreString"  
   """, should_throw("TypeError: Cannot match type of function 'str' for trait 'Showable' (a) -> String with the definition (semaphore: Semaphore, x: Int) -> String")]
+  
+  # Externals
+
+  ["""
+    external escape: (String) -> String
+    s = escape("<hello1>")  
+  """, should_have(bindings: {escape: "(String) -> String"}, values: {s: "%3Chello1%3E"})]
+
+  ["""
+    external 'escape': (String) -> String
+    s = escape("<hello2>")  
+  """, should_have(bindings: {escape: "(String) -> String"}, values: {s: "%3Chello2%3E"})]
+
+  ["""
+    external 'escape' as my_escape: (String) -> String
+    s = my_escape("<bye>")  
+  """, should_have(bindings: {my_escape: "(String) -> String"}, values: {s: "%3Cbye%3E"})]
 ]
 
 describe "compiler", ->
