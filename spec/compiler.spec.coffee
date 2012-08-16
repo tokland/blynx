@@ -174,9 +174,21 @@ tests = [
    """, 1.23]
 
   ["""
-    f(x: Int, y: Float, z: Int): Int = z
-    6.f(1.23, 2)
-   """, 2]
+    f(x: Int, y: Float): Float = y
+    x = 5
+    5.f(1.23)
+   """, 1.23]
+
+  ["""
+    f(x: Int, y: Float): Float = y
+    x = 5
+    (x).f(1.23)
+   """, 1.23]
+
+  ["""
+    f(x: Int, y: Int): Int = x
+    f(1, 2).f(3)
+   """, 1]
 
   # Chain calls
   

@@ -146,17 +146,19 @@ grammar =
   
   InnerExpression: [
     o 'Symbol', -> new SymbolReplacement($1)
+    o 'Symbol . Symbol FunctionArgumentListOptional', -> new FunctionCall($3, [$1].concat($4))
     o 'Value'
     o 'Value ( FunctionArgumentList )', -> new FunctionCall($1, $3)
-    o 'Literal . Symbol ( FunctionArgumentList )', -> new FunctionCall($3, [$1].concat($5))
-    o 'ParenExpression . Symbol ( FunctionArgumentList )', -> new FunctionCall($3, [$1].concat($5))
-    o 'FunctionCall . Symbol ( FunctionArgumentList )', -> new FunctionCall($3, [$1].concat($5))
-    o 'Literal . Symbol', -> new FunctionCall($3, [$1])
-    o 'ParenExpression . Symbol', -> new FunctionCall($3, [$1])
-    o 'FunctionCall . Symbol', -> new FunctionCall($3, [$1])
+    o 'Value . Symbol FunctionArgumentListOptional', -> new FunctionCall($3, [$1].concat($4))
     o 'Literal'
+    o 'Literal . Symbol FunctionArgumentListOptional', -> new FunctionCall($3, [$1].concat($4))
     o 'UnaryOp'
     o 'BinaryOp'
+  ]
+  
+  FunctionArgumentListOptional: [
+    o '', -> []
+    o '( FunctionArgumentList )', -> $2
   ]
   
   Value: [
