@@ -425,6 +425,30 @@ tests = [
     external 'escape' as my_escape: (String) -> String
     s = my_escape("<bye>")  
   """, should_have(bindings: {my_escape: "(String) -> String"}, values: {s: "%3Cbye%3E"})]
+
+
+  ["""
+    external '+': (Int, Int) -> Int
+    x = 1 + 2
+  """, should_have(bindings: {x: "Int"}, values: {x: 3})]
+
+  ["""
+    external '+' as (*): (Int, Int) -> Int
+    x = 2 * 3
+  """, should_have(bindings: {x: "Int"}, values: {x: 5})]
+
+  ["""
+    external '-' as ($-): (Int) -> Int
+    x = -2
+  """, should_have(bindings: {x: "Int"}, values: {x: -2})]
+
+  ["""
+    external '+' as (+): (Int) -> Int
+  """, should_throw("TypeError: Expected binary function, got '(Int) -> Int'")]
+
+  ["""
+    external '-' as ($-): (Int, Int) -> Int
+  """, should_throw("TypeError: Expected unary function, got '(Int, Int) -> Int'")]
 ]
 
 describe "compiler", ->

@@ -404,7 +404,7 @@ class External
     value = if @symbol.unary and _(native_unary_operators).include(external_name)
       if lib.getClass(type) != types.Function or _.size(type.args.get_types()) != 1
         error("TypeError", "Expected unary function, got '#{type}'")
-      "function(x) { return #{external_name} x; }"
+      "function(x) { return #{external_name}x; }"
     else if _(native_binary_operators).include(external_name)
       if lib.getClass(type) != types.Function or _.size(type.args.get_types()) != 2
         error("TypeError", "Expected binary function, got '#{type}'")
@@ -417,8 +417,8 @@ class External
 ##
 
 exports.FunctionCallFromID = (name, args, options = {}) ->
-  args2 = (new FunctionArgument("", arg) for arg in args)
-  new FunctionCall(new SymbolReplacement(new Symbol(name, options)), args2)
+  args_nodes = (new FunctionArgument("", arg) for arg in args)
+  new FunctionCall(new SymbolReplacement(new Symbol(name, options)), args_nodes)
 
 exports.node = (class_name, args...) ->
   klass = exports[class_name] or
