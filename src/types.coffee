@@ -6,8 +6,8 @@ lib = require 'lib'
 class TypeBase
   constructor: (args) ->
     @args = args
-    @classname = @constructor.name
-  toString: -> @classname
+    @name = @constructor.name
+  toString: -> @name
   inspect: -> @toString()
   get_types: -> this
   get_all_types: ->
@@ -82,7 +82,7 @@ exports.buildType = buildType = (name, arity) ->
         msg = "type '#{this.inspect()}' has arity #{@arity} but #{args.length} arguments given"
         error("InternalError", msg)
       super
-      @classname = name
+      @name = name
     name: name
     arity: arity
     toString: -> lib.optionalParens(name, @args)
@@ -90,12 +90,12 @@ exports.buildType = buildType = (name, arity) ->
 ## Auxiliar functions
 
 exports.match_types = match_types = (expected, given) ->
-  #console.log("match_types", expected, expected.classname, "---", given, given.classname)
+  #console.log("match_types", expected, expected.name, "---", given, given.name)
   if expected.variable and not given.variable
     _.mash([[expected, given]])
   else if expected.variable and given.variable
     _.mash([[expected, given]])
-  else if expected.classname == given.classname
+  else if expected.name == given.name
     expected_types = expected.get_types()
     given_types = given.get_types()
     if expected_types.constructor.name == "Array"

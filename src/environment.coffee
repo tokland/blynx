@@ -12,7 +12,7 @@ class Environment
   inspect: ->
     print_name = (name) -> if name.match(/[a-z_]/i) then name else "(#{name})"
     types0 = (indent(4, "#{name}: #{type.traits.join(', ')}") for name, type of @types)
-    traits = (indent(4, "#{name}: #{trait.methods.join(', ')} (implemented: #{trait.implemented_methods.join(', ')}}") for name, trait of @traits)
+    traits = (indent(4, "#{name}: #{trait.methods.join(', ')}") for name, trait of @traits)
     bindings = (indent(4, "#{print_name(k)}: #{v}") for k, v of @bindings)
     
     [

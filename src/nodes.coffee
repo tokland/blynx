@@ -8,6 +8,7 @@ render = (template, namespace) ->
   eco.render template, _(namespace).merge
     escape: (s) -> s
     json: JSON.stringify
+    jsname: jsname
   
 jsname = (s) ->
   table = lib.symbol_to_string_table
@@ -310,7 +311,6 @@ class TraitInterface
               when lib.getClass(node) != TraitInterfaceSymbolType)
     render """
       /* traitinterface <%= @trait_name %> */
-       
       <% for node in @trait_interface_statements: %>
         var <%= @jsname(node.name) %> = {}; 
       <% end %>
@@ -352,13 +352,12 @@ class TraitImplementation
         <% for b in @nodes: %>  
           <%= b.compile(@env) %>
         <% end %>
-        return {<%= (node.name + ' : _' + node.name for node in @nodes).join(', ') %>};<<
+        return {<%= (@jsname(node.name) + ' : _' + @jsname(node.name) for node in @nodes).join(', ') %>};<<
       }
       
-      var _<%= @trait %>_<%= @type %> = >>
-        api.merge(<%= @trait %>(<%= @json(@type) %>), <%= @trait %>_<%= @type %>());<<
+      var _<%= @trait %>_<%= @type %> = api.merge(<%= @trait %>(<%= @json(@type) %>), <%= @trait %>_<%= @type %>());
       <% for bname in @env.traits[@trait].methods: %>
-        <%= bname %>.<%= @type %> = _<%= @trait %>_<%= @type %>.<%= bname %>; 
+        <%= @jsname(bname) %>.<%= @type %> = _<%= @trait %>_<%= @type %>.<%= @jsname(bname) %>; 
       <% end %>
     """,
       env: tenv
@@ -367,7 +366,7 @@ class TraitImplementation
       type: type.name
 
 class TraitInterfaceSymbolType
-  constructor: (@name, @type) ->
+  constructor: (@symbol, @type) -> @name = @symbol.name
   process: (env) ->
     type0 = @type.process(env).type
     type = env.function_type_in_context_trait(type0)

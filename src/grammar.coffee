@@ -60,7 +60,7 @@ grammar =
   ]
 
   TraitInterfaceStatement: [
-    o 'ID : Type', -> new TraitInterfaceSymbolType($1, $3)
+    o 'Symbol : Type', -> new TraitInterfaceSymbolType($1, $3)
     o 'FunctionBinding', -> new transformTo("TraitInterfaceFunctionBinding", $1) 
     o 'SymbolBinding', -> new transformTo("TraitInterfaceSymbolBinding", $1)
   ]
