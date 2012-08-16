@@ -148,6 +148,12 @@ grammar =
     o 'Symbol', -> new SymbolReplacement($1)
     o 'Value'
     o 'Value ( FunctionArgumentList )', -> new FunctionCall($1, $3)
+    o 'Literal . Symbol ( FunctionArgumentList )', -> new FunctionCall($3, [$1].concat($5))
+    o 'ParenExpression . Symbol ( FunctionArgumentList )', -> new FunctionCall($3, [$1].concat($5))
+    o 'FunctionCall . Symbol ( FunctionArgumentList )', -> new FunctionCall($3, [$1].concat($5))
+    o 'Literal . Symbol', -> new FunctionCall($3, [$1])
+    o 'ParenExpression . Symbol', -> new FunctionCall($3, [$1])
+    o 'FunctionCall . Symbol', -> new FunctionCall($3, [$1])
     o 'Literal'
     o 'UnaryOp'
     o 'BinaryOp'
@@ -157,7 +163,7 @@ grammar =
     o 'ParenExpression'
     o 'FunctionCall'
   ]
-  
+
   ParenExpression: [
     o '( Expression )', -> new ParenExpression($2)
   ]
@@ -241,6 +247,7 @@ operators = [
   ['left', 'SYMBOL_PLUS', 'SYMBOL_MINUS']
   ['left', 'SYMBOL_MUL', 'SYMBOL_DIV', 'SYMBOL_PERCENT']
   ['right', 'UNARY']
+  ['left', '.']
 ]
 
 exports.parser = new jison.Parser

@@ -382,6 +382,7 @@ class Symbol
   constructor: (name, options = {}) -> 
     @unary = !!options.unary
     @name = if @unary then "#{name}_unary" else name
+  process: (env) -> {env, type: env.get_binding(@name)}
   compile: (env) -> @name
 
 class Id

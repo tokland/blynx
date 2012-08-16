@@ -161,6 +161,23 @@ tests = [
     f(1, z=3, y=2)
    """, 3]
 
+  # OOP-style calls
+  
+  ["""
+    f(x: Int): Int = x
+    1.f
+   """, 1]
+
+  ["""
+    f(x: Int, y: Float): Float = y
+    6.f(1.23)
+   """, 1.23]
+
+  ["""
+    f(x: Int, y: Float, z: Int): Int = z
+    6.f(1.23, 2)
+   """, 2]
+
   # Chain calls
   
   ["""
