@@ -64,7 +64,7 @@ class Function extends TypeBase
     _([
       "#{@args.toString()} -> #{@result.toString()}"
       ("where(#{("#{k}@#{v}" for [k, v] in @restrictions)})") if _(@restrictions).isNotEmpty()
-      "[trait #{@trait}]" if @trait
+      "[#{@trait}]" if @trait
     ]).compact().join(" ")
   toShortString: -> "#{@args.toString()} -> #{@result.toString()}"
   get_types: -> 

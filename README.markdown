@@ -30,8 +30,8 @@ _Find the sum of the digits in the number 100!_. We can write a compact one-line
 That's ok to solve this particular problem, but programming is about building abstractions, so let's split the code into re-usable functions:
 
 ```coffeescript
-sum(xs: [a]): a where(a@Num) = xs.reduce(0, (+))
-product(xs: [a]): a where(a@Num) = xs.reduce(1, (*))
+sum(xs: [a]): a where(a@Num) = xs.reduce(0: a, (+))
+product(xs: [a]): a where(a@Num) = xs.reduce(1: a, (*))
 factorial(n: Int): Int = [1..n].product
 digits(n: Int): [Int] = n.str.chars.map(int)
 

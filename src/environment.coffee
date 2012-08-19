@@ -45,8 +45,8 @@ class Environment
     type = @types[name] or
       error("TypeError", "undefined type '#{name}'")
     type.klass
-  add_function_binding: (name, args, result_type) ->
-    restrictions = @get_context("restrictions") or []
+  add_function_binding: (name, args, result_type, options = {}) ->
+    restrictions = @get_context("restrictions") or options.restrictions or []
     args_ns = ([arg.name, arg.process(this).type] for arg in args)
     args_type = new types.NamedTuple(args_ns)
     trait = @get_context("trait")
@@ -72,9 +72,11 @@ class Environment
     if @context then @context[name] else null
   in_context: (new_context) ->
     @clone(context: new_context)
-  check_restrictions: (type) ->
-    for [type_name, trait_name] in type.restrictions
-      if not _(@types[type_name].traits).include(trait_name)
+  check_restrictions: (function_type) ->
+    debug("check_restrictions", function_type, "--res--", function_type.restrictions)
+    for [type_name, trait_name] in function_type.restrictions
+      type = @types[type_name]
+      if not type or not _(type.traits).include(trait_name)
         error("TypeError", "type '#{type_name}' does not implement trait '#{trait_name}'")
   add_trait_for_type: (type_name, trait_name) ->
     type = @types[type_name] or error("TypeError", "No type with name '{type_name}'")
@@ -97,6 +99,6 @@ class Environment
     new types.Function(ftype.args, ftype.result, 
       @get_context("trait"), @get_context("restrictions"))
   get_trait: (name) -> 
-    @traits[name]
+    @traits[name] or error("TypeError", "Trait '#{name}' not defined")
 
 exports.Environment = Environment

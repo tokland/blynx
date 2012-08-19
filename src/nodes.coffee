@@ -66,6 +66,7 @@ class TraitImplementationSymbolBinding extends TraitInterfaceSymbolBinding
 class FunctionBinding
   constructor: (name, @args, @result_type, @block, options = {}) ->
     @name = if options.unary then "#{name}_unary" else name
+    @restrictions = options.restrictions or []
   get_block_env: (env) ->
     _.freduce @args, env, (block_env, arg) ->
       block_env.add_binding(arg.name, arg.process(env).type, 
@@ -77,7 +78,8 @@ class FunctionBinding
     unless namespace = types.match_types(block_type, result_type)
       msg = "function '#{@name}' should return '#{result_type}' but returns '#{block_type}'"
       error("TypeError", msg)
-    env.add_function_binding(@name, @args, result_type)
+    restrictions = (r.get(env) for r in @restrictions)
+    env.add_function_binding(@name, @args, result_type, restrictions: restrictions)
   compile: (env) -> 
     "var #{jsname(@name)} = #{@compile_value(env)};"
   compile_value: (env) ->
@@ -92,6 +94,12 @@ class FunctionBinding
     else
       "function(#{js_args}) { return #{@block.compile(block_env)}; }"
 
+class Restriction
+  constructor: (@typevar, @trait) -> 
+  get: (env) ->
+    env.get_trait(@trait)
+    [@typevar.process(env).type, @trait]
+  
 class TraitInterfaceFunctionBinding extends FunctionBinding
   compile: (env) -> 
     "var _#{jsname(@name)} = #{@compile_value(env)};"
@@ -433,7 +441,7 @@ exports.transformTo = (classname, instance) ->
 
 lib.exportClasses(exports, [
   Root
-  SymbolBinding, FunctionBinding, 
+  SymbolBinding, FunctionBinding, Restriction 
   TypedArgument, Type, TypeVariable, 
   TupleType, FunctionType
   Expression, ParenExpression, Block, StatementExpression

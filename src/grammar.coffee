@@ -90,6 +90,10 @@ grammar =
   
   TypeArguments:
     r 'TypeVariable', name: "TypeArguments", min: 1, join: ','
+
+  Trait: [
+    o 'CAPID'
+  ]
   
   TypeVariable: [
     o 'ID', -> new TypeVariable($1)
@@ -109,14 +113,26 @@ grammar =
   ]
   
   FunctionBinding: [
-    o 'ID ( ) : Type = BlockOrExpression', 
-      -> new FunctionBinding($1, [], $5, $7)
-    o 'ID ( TypedArgumentList ) : Type = BlockOrExpression', 
-      -> new FunctionBinding($1, $3, $6, $8)
-    o '( OpSymbol ) ( TypedArgumentList ) : Type = BlockOrExpression', 
-      -> new FunctionBinding($2, $5, $8, $10)
-    o '( $ OpSymbol ) ( TypedArgumentList ) : Type = BlockOrExpression', 
-      -> new FunctionBinding($3, $6, $9, $11, unary: true)
+    o 'ID ( ) : Type OptionalRestrictions = BlockOrExpression', 
+      -> new FunctionBinding($1, [], $5, $8, restrictions: $6)
+    o 'ID ( TypedArgumentList ) : Type OptionalRestrictions = BlockOrExpression', 
+      -> new FunctionBinding($1, $3, $6, $9, restrictions: $7)
+    o '( OpSymbol ) ( TypedArgumentList ) : Type OptionalRestrictions = BlockOrExpression', 
+      -> new FunctionBinding($2, $5, $8, $11, restrictions: $9)
+    o '( $ OpSymbol ) ( TypedArgumentList ) : Type OptionalRestrictions = BlockOrExpression', 
+      -> new FunctionBinding($3, $6, $9, $12, unary: true, restrictions: $10)
+  ]
+  
+  OptionalRestrictions: [
+    o '', -> []
+    o 'WHERE ( RestrictionList )', -> $3
+  ]
+  
+  RestrictionList: 
+    r 'Restriction', join: ',', min: 1
+    
+  Restriction: [
+    o 'TypeVariable @ Trait', -> new Restriction($1, $3)
   ]
   
   OpSymbol: (

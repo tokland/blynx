@@ -25,7 +25,7 @@ keywords = (s) ->
   
 # {tokenName: RegExp}
 tokensDefinition = 
-  _KEYWORDS: keywords("type trait traits traitinterface if then else external as return match case yield")
+  _KEYWORDS: keywords("type trait traits traitinterface if then else external as where return match case yield")
 
   FLOAT: /[0-9]+\.(?:[0-9]+)/
   INTEGER: /[0-9]+/

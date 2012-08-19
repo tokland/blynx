@@ -140,8 +140,9 @@ tests = [
   
   # Functions
   
-  ["f(x: Int, y: Int): Float =", 
-    "[ID f] ( [ID x] : [CAPID Int] , [ID y] : [CAPID Int] ) : [CAPID Float] ="]
+  ["f(x: Int, y: a): Float where(a@Num) =", 
+    "[ID f] ( [ID x] : [CAPID Int] , [ID y] : [ID a] ) " +
+      ": [CAPID Float] [WHERE where] ( [ID a] @ [CAPID Num] ) ="]
   
   ["typed = 1",
     "[ID typed] = [INTEGER 1]"]
