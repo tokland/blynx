@@ -33,29 +33,28 @@ class Environment
   get_binding: (name) ->
     @bindings[name] or
       error("NameError", "undefined symbol '#{name}'")
-  get_types_from_nodes: (nodes) ->
-    (node.process(this).type for node in nodes)
   add_type: (name, klass, traits) ->
     @types[name] and
       error("TypeError", "type '#{name}' already defined")
     type = {klass: klass, traits: traits}
     new_types = _.merge(@types, _.mash([[name, type]]))
     @clone(types: new_types)
+  get_type_class: (name) ->
+    @get_type(name).klass
   get_type: (name) ->
-    type = @types[name] or
+    @types[name] or
       error("TypeError", "undefined type '#{name}'")
-    type.klass
   add_function_binding: (name, args, result_type, options = {}) ->
     restrictions = @get_context("restrictions") or options.restrictions or []
-    args_ns = ([arg.name, arg.process(this).type] for arg in args)
+    args_ns = ([arg.name, arg.process(this, restrictions: restrictions).type] for arg in args)
     args_type = new types.NamedTuple(args_ns)
     trait = @get_context("trait")
     function_type = new types.Function(args_type, result_type, trait, restrictions)
     if not @get_context("trait_interface") and trait
-      namespace = types.match_types(@bindings[name], function_type)
+      namespace = types.match_types(this, @bindings[name], function_type)
       tv = @traits[trait].typevar
       type = @get_context("type")
-      if not namespace or not types.match_types(namespace[tv], type)  
+      if not namespace or not types.match_types(this, namespace[tv], type)  
         error("TypeError", "Cannot match type of function '#{name}' for trait " +
           "'#{trait}' #{@bindings[name].toShortString()} with " +
           "the definition #{function_type.toShortString()}")
@@ -72,12 +71,6 @@ class Environment
     if @context then @context[name] else null
   in_context: (new_context) ->
     @clone(context: new_context)
-  check_restrictions: (function_type) ->
-    debug("check_restrictions", function_type, "--res--", function_type.restrictions)
-    for [type_name, trait_name] in function_type.restrictions
-      type = @types[type_name]
-      if not type or not _(type.traits).include(trait_name)
-        error("TypeError", "type '#{type_name}' does not implement trait '#{trait_name}'")
   add_trait_for_type: (type_name, trait_name) ->
     type = @types[type_name] or error("TypeError", "No type with name '{type_name}'")
     trait = @traits[trait_name] or error("TypeError", "No trait with name '{type_name}'")
@@ -90,7 +83,7 @@ class Environment
   is_inside_trait: ->
     !!@get_context("trait")
   in_trait_interface: (name, typevar) ->
-    restrictions = [[typevar, name]]
+    restrictions = [[typevar.name, name]]
     trait_env = @in_context
       trait: name
       trait_interface: true
@@ -98,7 +91,9 @@ class Environment
   function_type_in_context_trait: (ftype) ->
     new types.Function(ftype.args, ftype.result, 
       @get_context("trait"), @get_context("restrictions"))
-  get_trait: (name) -> 
+  get_trait: (name) ->
     @traits[name] or error("TypeError", "Trait '#{name}' not defined")
+  is_type_of_trait: (type, trait) ->
+    _(@get_type(type).traits).include(trait)
 
 exports.Environment = Environment

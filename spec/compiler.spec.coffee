@@ -412,7 +412,7 @@ tests = [
     type Semaphore = Red | Yellow | Green
     trait Showable Semaphore
       str(semaphore: Int): String = "SemaphoreString"  
-  """, should_throw("TypeError: Cannot match type of function 'str' for trait 'Showable' (a) -> String with the definition (semaphore: Int) -> String")]
+  """, should_throw("TypeError: type 'Int' does not implement trait 'Showable'")]
 
   ["""
     traitinterface Showable a

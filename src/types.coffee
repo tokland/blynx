@@ -21,8 +21,8 @@ class TypeBase
 
 class Variable extends TypeBase
   variable: true
-  constructor: (@name) -> 
-  toString: -> @name 
+  constructor: (@name, @traits = []) -> 
+  toString: -> @name
   join: (namespace) -> namespace[this] or this
 
 ## Basic
@@ -70,8 +70,7 @@ class Function extends TypeBase
   get_types: -> 
     [@args, @result]
   join: (namespace) ->
-    new_restrictions = ([tv.join(namespace), type] for [tv, type] in @restrictions)
-    new Function(@args.join(namespace), @result.join(namespace), @trait, new_restrictions)
+    new Function(@args.join(namespace), @result.join(namespace), @trait)
 
 ## ADT
 
@@ -89,9 +88,10 @@ exports.buildType = buildType = (name, arity) ->
 
 ## Auxiliar functions
 
-exports.match_types = match_types = (expected, given) ->
-  #console.log("match_types", expected, expected.name, "---", given, given.name)
+exports.match_types = match_types = (env, expected, given) ->
   if expected.variable and not given.variable
+    if (trait = _.first(tr for tr in expected.traits when not env.is_type_of_trait(given, tr)))
+      error("TypeError", "type '#{given}' does not implement trait '#{trait}'")
     _.mash([[expected, given]])
   else if expected.variable and given.variable
     _.mash([[expected, given]])
@@ -102,7 +102,7 @@ exports.match_types = match_types = (expected, given) ->
       if expected_types.length != given_types.length
         false
       else
-        namespaces = (match_types(e, g) for [e, g] in _.zip(expected_types, given_types))
+        namespaces = (match_types(env, e, g) for [e, g] in _.zip(expected_types, given_types))
         if _.all(namespaces, _.identity)
           _.freduce namespaces, {}, (acc, namespace) -> _.merge(acc, namespace)
         else
