@@ -490,6 +490,44 @@ tests = [
     type Bool = True | False
     x = if False then 1 else if True then 2 else 3
   """, should_have(bindings: {x: "Int"}, values: {x: 2})]
+
+  ["""
+    x = if 1 then 2 else 3
+  """, should_throw("TypeError: undefined type 'Bool'")]
+
+  ["""
+    type Bool = True | False
+    x = if 1 then "true" else "false"
+  """, should_throw("TypeError: Condition must be a Bool, it's a Int")]
+
+  ["""
+    type Bool = True | False
+    x = if True then "true" else 2
+  """, should_throw("TypeError: Types in branches should match: String <-> Int")]
+  
+  ["""
+    type Bool = True | False
+    x = case
+      True -> 1
+      True -> 2
+      False -> 3
+  """, should_have(bindings: {x: "Int"}, values: {x: 1})]
+
+  ["""
+    type Bool = True | False
+    x = case
+      True -> 1
+      4.2 -> "two"
+      False -> 3
+  """, should_throw("TypeError: Condition must be a Bool, it's a Float")]
+
+  ["""
+    type Bool = True | False
+    x = case
+      True -> 1
+      True -> "two"
+      False -> 3
+  """, should_throw("TypeError: Types in branches should match: Int <-> String")]
 ]
 
 describe "compiler", ->

@@ -146,7 +146,9 @@ class FunctionType
 class Expression
   constructor: (@value) ->
   process: (env) -> @value.process(env)
-  compile: (env) -> @value.compile(env)
+  compile: (env, options = {}) ->
+    compiled = @value.compile(env)
+    if options.return then "return #{compiled};" else compiled
 
 class ParenExpression
   constructor: (@value) ->
@@ -442,6 +444,30 @@ class IfConditional
     "((#{@condition.compile(env)} === True) ? #{@value_true.compile(env)}" +
       " : #{@value_false.compile(env)})"    
 
+class CaseConditional
+  constructor: (@arrow_pairs) ->
+  process: (env) ->
+    type = @arrow_pairs[0].right.process(env).type
+    for arrow_pair, index in @arrow_pairs
+      condition_type = arrow_pair.left.process(env).type
+      condition_type.constructor == env.get_type_class("Bool") or
+        error("TypeError", "Condition must be a Bool, it's a #{condition_type}")
+      if index > 0
+        type2 = arrow_pair.right.process(env).type
+        types.match_types(env, type, type2) or
+          error("TypeError", "Types in branches should match: #{type} <-> #{type2}")
+    {env, type: type}
+  compile: (env) ->
+    branches = for arrow_pair, index in @arrow_pairs
+       statement = if index == 0 then "if" else "else if"
+       "#{statement} (#{arrow_pair.left.compile(env)} === True) {>>\n" +
+         "#{arrow_pair.right.compile(env, return: true)}<<\n" +
+         "}"
+    "(function() {>>\n" + branches.join(" ") + "<<\n" + "}).call()"
+
+class ArrowPair
+  constructor: (@left, @right) ->
+  
 ##
 exports.FunctionCallFromID = (name, args, options = {}) ->
   args_nodes = (new FunctionArgument("", arg) for arg in args)
@@ -475,5 +501,6 @@ lib.exportClasses(exports, [
   TraitImplementation,
   Id, StringQ,
   External
-  IfConditional
+  ArrowPair
+  IfConditional, CaseConditional
 ])

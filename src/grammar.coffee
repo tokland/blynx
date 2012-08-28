@@ -171,10 +171,24 @@ grammar =
     o 'UnaryOp'
     o 'BinaryOp'
     o 'IfConditional'
+    o 'CaseConditional'
   ]
   
   IfConditional: [
     o 'IF Expression THEN Expression ELSE Expression', -> new IfConditional($2, $4, $6)
+  ]
+
+  CaseConditional: [
+    o 'CASE INDENT ArrowPairList DEDENT', -> new CaseConditional($3)
+  ]
+  
+  ArrowPairList: [
+    o 'ArrowPair TERMINATOR', -> [$1] 
+    o 'ArrowPairList ArrowPair TERMINATOR', -> $1.concat([$2])
+  ]
+  
+  ArrowPair: [
+    o 'Expression -> BlockOrExpression', -> new ArrowPair($1, $3)
   ]
 
   FunctionArgumentListOptional: [
