@@ -478,6 +478,18 @@ tests = [
   ["""
     external '-' as ($-): (Int, Int) -> Int
   """, should_throw("TypeError: Expected unary function, got '(Int, Int) -> Int'")]
+  
+  # Conditionals
+  
+  ["""
+    type Bool = True | False
+    x = if True then "true" else "false"
+  """, should_have(bindings: {x: "String"}, values: {x: "true"})]
+
+  ["""
+    type Bool = True | False
+    x = if False then 1 else if True then 2 else 3
+  """, should_have(bindings: {x: "Int"}, values: {x: 2})]
 ]
 
 describe "compiler", ->

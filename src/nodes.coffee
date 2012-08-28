@@ -427,6 +427,22 @@ class External
 
 ##
 
+class IfConditional
+  constructor: (@condition, @value_true, @value_false) ->
+  process: (env) ->
+    condition_type = @condition.process(env).type
+    condition_type.constructor == env.get_type_class("Bool") or
+      error("TypeError", "Condition must be a Bool, it's a #{condition_type}")
+    type1 = @value_true.process(env).type
+    type2 = @value_false.process(env).type
+    types.match_types(env, type1, type2) or
+      error("TypeError", "Types in branches should match: #{type1} <-> #{type2}")
+    {env, type: type1}
+  compile: (env) ->
+    "((#{@condition.compile(env)} === True) ? #{@value_true.compile(env)}" +
+      " : #{@value_false.compile(env)})"    
+
+##
 exports.FunctionCallFromID = (name, args, options = {}) ->
   args_nodes = (new FunctionArgument("", arg) for arg in args)
   new FunctionCall(new SymbolReplacement(new Symbol(name, options)), args_nodes)
@@ -459,4 +475,5 @@ lib.exportClasses(exports, [
   TraitImplementation,
   Id, StringQ,
   External
+  IfConditional
 ])

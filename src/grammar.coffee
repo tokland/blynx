@@ -170,8 +170,13 @@ grammar =
     o 'Literal . Symbol FunctionArgumentListOptional', -> new FunctionCall($3, [$1].concat($4))
     o 'UnaryOp'
     o 'BinaryOp'
+    o 'IfConditional'
   ]
   
+  IfConditional: [
+    o 'IF Expression THEN Expression ELSE Expression', -> new IfConditional($2, $4, $6)
+  ]
+
   FunctionArgumentListOptional: [
     o '', -> []
     o '( FunctionArgumentList )', -> $2
@@ -264,6 +269,7 @@ operators = [
   ['right', 'SYMBOL_COLON']
   ['left', 'SYMBOL_PLUS', 'SYMBOL_MINUS']
   ['left', 'SYMBOL_MUL', 'SYMBOL_DIV', 'SYMBOL_PERCENT']
+  ["right", "IF", "THEN", "ELSE"],
   ['right', 'UNARY']
   ['left', '.']
 ]
