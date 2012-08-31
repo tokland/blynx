@@ -13,7 +13,7 @@ tests = [
   ["x = 1.23", should_have(bindings: {x: "Float"})]
   ['x = "hello"', should_have(bindings: {x: "String"})]
   ['x = (1, 1.23, "hello")', should_have(bindings: {x: "(Int, Float, String)"})]
-
+  
   # ADT
 
   ["""
@@ -54,10 +54,10 @@ tests = [
   """, should_have(bindings: {left: "Either(Int, b)", right: "Either(a, Float)"})]
 
   ["""
-    type List(a) = Nil | Cons(head: a, tail: List(a))
+    type MyList(a) = Nil | Cons(head: a, tail: MyList(a))
     xs = Cons(1, Cons(2, Nil))
     ys = Nil
-  """, should_have(bindings: {xs: "List(Int)", ys: "List(a)"})]
+  """, should_have(bindings: {xs: "MyList(Int)", ys: "MyList(a)"})]
   
   # Symbol bindings
   
@@ -528,6 +528,28 @@ tests = [
       True -> "two"
       False -> 3
   """, should_throw("TypeError: Types in branches should match: Int <-> String")]
+
+  # Lists
+  
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: [a])
+    xs = []
+  """, should_have(binding: {xs: '[a]'})]
+
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: [a])
+    xs = [1, 2]
+  """, should_have(binding: {xs: '[Int]'})]
+
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: [a])
+    xs = [1, 2, "hello"]
+  """, should_throw("TypeError: Cannot match type 'String' in list of 'Int'")]
+
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: [a])
+    id(xs: [a]): [a] = xs
+  """, should_have(bindings: {id: '(xs: [a]) -> [a]'})]
 ]
 
 describe "compiler", ->

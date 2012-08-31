@@ -133,6 +133,14 @@ class TupleType
     tuple_args = get_types_from_nodes(env, @types)
     {env, type: new types.Tuple(tuple_args)}
 
+class ListType
+  constructor: (@type) ->
+  process: (env) ->
+    klass = env.get_type_class("List")
+    inner_type = @type.process(env).type
+    type = new klass([inner_type])
+    {env, type}
+
 class FunctionType
   constructor: (@args, @result) ->
   process: (env, options = {}) ->
@@ -258,6 +266,26 @@ class Tuple
     {env, type: new types.Tuple(args)}
   compile: (env) ->
     "[" + _(@values).invoke("compile", env).join(", ") + "]" 
+
+class List
+  constructor: (@values) ->
+  process: (env) ->
+    inner_type = if _(@values).isNotEmpty()
+      type0 = _.first(@values).process(env).type
+      for value in @values[1..-1]
+        type = value.process(env).type
+        types.match_types(env, type0, type) or
+          error("TypeError", "Cannot match type '#{type}' in list of '#{type0}'")
+      type0
+    else
+      new types.TypeVariable
+    klass = env.get_type_class("List")
+    list_type = new klass([inner_type])
+    {env, type: list_type}
+  compile: (env) ->
+    _list = (xs) ->
+      if _(xs).isEmpty() then "Nil" else "Cons(#{xs[0].compile(env)}, #{_list(xs[1..-1])})"
+    _list(@values) 
 
 ##
 
@@ -488,11 +516,11 @@ lib.exportClasses(exports, [
   Root
   SymbolBinding, FunctionBinding, Restriction 
   TypedArgument, Type, TypeVariable, 
-  TupleType, FunctionType
+  TupleType, FunctionType, ListType
   Expression, ParenExpression, Block, StatementExpression
   Symbol, SymbolReplacement,
   FunctionCall, FunctionArgument
-  Int, Float, String, Tuple
+  Int, Float, String, Tuple, List
   TypeDefinition, TypeConstructorDefinition
   Comment
   TraitInterface, TraitInterfaceSymbolBinding, TraitImplementationSymbolBinding,

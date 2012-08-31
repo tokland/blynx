@@ -84,7 +84,8 @@ exports.buildType = buildType = (name, arity) ->
       @name = name
     name: name
     arity: arity
-    toString: -> lib.optionalParens(name, @args)
+    toString: -> 
+      if name == "List" then "[#{@args[0].toString()}]" else lib.optionalParens(name, @args)
 
 ## Auxiliar functions
 

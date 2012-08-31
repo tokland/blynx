@@ -235,7 +235,15 @@ grammar =
     o 'FLOAT', -> new Float($1)
     o 'STRING', -> new String($1)
     o 'Tuple', -> new Tuple($1)
+    o 'List', -> new List($1)
   ]
+  
+  List: [
+    o '[ ExpressionList ]', -> $2
+  ]
+  
+  ExpressionList:
+    r 'Expression', min: 0, join: ','
 
   Tuple: [
     o '( Expression , TupleList )', -> [$2].concat($4)
@@ -247,6 +255,7 @@ grammar =
   Type: [
     o 'CAPID', -> new Type($1, [])
     o 'CAPID ( TypeList )', -> new Type($1, $3)
+    o '[ Type ]', -> new ListType($2)
     o '( NamedTupleArgumentList )', -> new TupleType($2)
     o '( NamedTupleArgumentList ) -> Type', -> new FunctionType($2, $5)
     o 'TypeVariable'
