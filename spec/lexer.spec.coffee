@@ -172,6 +172,10 @@ tests = [
 
   ["trait traits traitinterface",
     "[TRAIT trait] [TRAITS traits] [TRAITINTERFACE traitinterface]"]
+    
+  # Array
+  
+  ["A[1, 2]", "A[ [INTEGER 1] , [INTEGER 2] ]"]
 ]
 
 tokens = (args...) ->

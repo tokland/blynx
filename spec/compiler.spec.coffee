@@ -550,6 +550,24 @@ tests = [
     type List(a) = Nil | Cons(head: a, tail: [a])
     id(xs: [a]): [a] = xs
   """, should_have(bindings: {id: '(xs: [a]) -> [a]'})]
+
+  # Arrays
+  
+  ["""
+    xs = A[]
+  """, should_have(binding: {xs: 'A[a]'})]
+
+  ["""
+    xs = A[1, 2]
+  """, should_have(binding: {xs: 'A[Int]'})]
+
+  ["""
+    xs = A[1, 2, "hello"]
+  """, should_throw("TypeError: Cannot match type 'String' in array of 'Int'")]
+
+  ["""
+    id(xs: A[a]): A[a] = xs
+  """, should_have(bindings: {id: '(xs: A[a]) -> A[a]'})]
 ]
 
 describe "compiler", ->

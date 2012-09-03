@@ -34,6 +34,7 @@ tokensDefinition =
   _SYMBOLS_INTERNAL1: b("-> => , ; ... .. . $ @")
   _SYMBOLS_INTERNAL2: isolated(": =")
   _SYMBOLS_INTERNAL3: isolated("& ! |")
+  _ARRAY_START: /A\[/
 
   SYMBOL_EQUAL: op("=")  
   SYMBOL_PLUS: op("+")

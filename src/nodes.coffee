@@ -141,6 +141,14 @@ class ListType
     type = new klass([inner_type])
     {env, type}
 
+class ArrayType
+  constructor: (@type) ->
+  process: (env) ->
+    klass = env.get_type_class("Array")
+    inner_type = @type.process(env).type
+    type = new klass([inner_type])
+    {env, type}
+
 class FunctionType
   constructor: (@args, @result) ->
   process: (env, options = {}) ->
@@ -286,6 +294,24 @@ class List
     _list = (xs) ->
       if _(xs).isEmpty() then "Nil" else "Cons(#{xs[0].compile(env)}, #{_list(xs[1..-1])})"
     _list(@values) 
+
+class ArrayNode
+  constructor: (@values) ->
+  process: (env) ->
+    inner_type = if _(@values).isNotEmpty()
+      type0 = _.first(@values).process(env).type
+      for value in @values[1..-1]
+        type = value.process(env).type
+        types.match_types(env, type0, type) or
+          error("TypeError", "Cannot match type '#{type}' in array of '#{type0}'")
+      type0
+    else
+      new types.TypeVariable
+    klass = env.get_type_class("Array")
+    list_type = new klass([inner_type])
+    {env, type: list_type}
+  compile: (env) ->
+    "[" + (x.compile(env) for x in @values).join(", ") + "]"
 
 ##
 
@@ -516,11 +542,11 @@ lib.exportClasses(exports, [
   Root
   SymbolBinding, FunctionBinding, Restriction 
   TypedArgument, Type, TypeVariable, 
-  TupleType, FunctionType, ListType
+  TupleType, FunctionType, ListType, ArrayType
   Expression, ParenExpression, Block, StatementExpression
   Symbol, SymbolReplacement,
   FunctionCall, FunctionArgument
-  Int, Float, String, Tuple, List
+  Int, Float, String, Tuple, List, ArrayNode
   TypeDefinition, TypeConstructorDefinition
   Comment
   TraitInterface, TraitInterfaceSymbolBinding, TraitImplementationSymbolBinding,

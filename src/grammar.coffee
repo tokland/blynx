@@ -236,10 +236,15 @@ grammar =
     o 'STRING', -> new String($1)
     o 'Tuple', -> new Tuple($1)
     o 'List', -> new List($1)
+    o 'Array', -> new ArrayNode($1)
   ]
   
   List: [
     o '[ ExpressionList ]', -> $2
+  ]
+
+  Array: [
+    o 'A[ ExpressionList ]', -> $2
   ]
   
   ExpressionList:
@@ -256,6 +261,7 @@ grammar =
     o 'CAPID', -> new Type($1, [])
     o 'CAPID ( TypeList )', -> new Type($1, $3)
     o '[ Type ]', -> new ListType($2)
+    o 'A[ Type ]', -> new ArrayType($2)
     o '( NamedTupleArgumentList )', -> new TupleType($2)
     o '( NamedTupleArgumentList ) -> Type', -> new FunctionType($2, $5)
     o 'TypeVariable'

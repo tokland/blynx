@@ -33,6 +33,11 @@ class Float extends TypeBase
 
 class String extends TypeBase
 
+class Array extends TypeBase
+  arity: 1
+  toString: -> "A[#{@args[0].toString()}]"
+  get_types: -> @args[0]
+
 ## Tuple 
 
 class Tuple extends TypeBase
@@ -116,4 +121,4 @@ exports.match_types = match_types = (env, expected, given) ->
 ##
 
 lib.exportClasses(exports,
-  [Int, Float, String, Tuple, NamedTuple, Function, Variable])
+  [Int, Float, String, Array, Tuple, NamedTuple, Function, Variable])
