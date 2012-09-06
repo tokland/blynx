@@ -65,7 +65,7 @@ tests = [
     """[STRINGQ 'hello there']"""]
 
   ['x=1\n#my comment\n1',
-    "[ID x] = [INTEGER 1] TERMINATOR [COMMENT my comment] TERMINATOR [INTEGER 1]"]
+    "[LET let] [ID x] = [INTEGER 1] TERMINATOR [COMMENT my comment] TERMINATOR [INTEGER 1]"]
 
   ['4 #hello',
     "[INTEGER 4] [COMMENT hello]"]
@@ -141,22 +141,22 @@ tests = [
   # Functions
   
   ["f(x: Int, y: a): Float where(a@Num) =", 
-    "[ID f] ( [ID x] : [CAPID Int] , [ID y] : [ID a] ) " +
+    "[LET let] [ID f] ( [ID x] : [CAPID Int] , [ID y] : [ID a] ) " +
       ": [CAPID Float] [WHERE where] ( [ID a] @ [CAPID Num] ) ="]
   
   ["typed = 1",
-    "[ID typed] = [INTEGER 1]"]
+    "[LET let] [ID typed] = [INTEGER 1]"]
 
   ["($-)(x: Int): Int = -x", 
-    "( $ [SYMBOL_MINUS -] ) ( [ID x] : [CAPID Int] ) : [CAPID Int] = [SYMBOL_MINUS -] [ID x]"]
+    "[LET let] ( $ [SYMBOL_MINUS -] ) ( [ID x] : [CAPID Int] ) : [CAPID Int] = [SYMBOL_MINUS -] [ID x]"]
     
   # Keywords
   
   ["type Bool = True | False", 
     "[TYPE type] [CAPID Bool] = [CAPID True] | [CAPID False]"]
 
-  ["external alert as myalert =", 
-    "[EXTERNAL external] [ID alert] [AS as] [ID myalert] ="]
+  ["external alert as myalert: Int", 
+    "[EXTERNAL external] [ID alert] [AS as] [ID myalert] : [CAPID Int]"]
 
   ["return 1",
     "[RETURN return] [INTEGER 1]"]

@@ -27,8 +27,8 @@ grammar =
     o 'TypeDefinition'
     o 'TraitInterface'
     o 'TraitImplementation'
-    o 'SymbolBinding'
-    o 'FunctionBinding'
+    o 'LET SymbolBinding', -> $2
+    o 'LET FunctionBinding', -> $2
     o 'External'
   ]
   
@@ -61,13 +61,13 @@ grammar =
 
   TraitInterfaceStatement: [
     o 'Symbol : Type', -> new TraitInterfaceSymbolType($1, $3)
-    o 'FunctionBinding', -> new transformTo("TraitInterfaceFunctionBinding", $1) 
-    o 'SymbolBinding', -> new transformTo("TraitInterfaceSymbolBinding", $1)
+    o 'LET FunctionBinding', -> new transformTo("TraitInterfaceFunctionBinding", $2) 
+    o 'LET SymbolBinding', -> new transformTo("TraitInterfaceSymbolBinding", $2)
   ]
   
   TraitImplementationStatement: [
-    o 'FunctionBinding', -> new transformTo("TraitImplementationStatementBinding", $1)
-    o 'SymbolBinding', -> new transformTo("TraitImplementationSymbolBinding", $1)
+    o 'LET FunctionBinding', -> new transformTo("TraitImplementationStatementBinding", $2)
+    o 'LET SymbolBinding', -> new transformTo("TraitImplementationSymbolBinding", $2)
   ]
 
   TraitInterfaceStatementList: [
@@ -108,8 +108,12 @@ grammar =
   ]
   
   SymbolBinding: [
-    o 'ID = BlockOrExpression', -> new SymbolBinding($1, $3)
-    o '( OpSymbol ) = BlockOrExpression', -> new SymbolBinding($2, $5)
+    o 'MatchExpression = BlockOrExpression', -> new SymbolBinding($1, $3)
+  ]
+  
+  MatchExpression: [
+    o 'ID'
+    o '( OpSymbol )', -> $2
   ]
   
   FunctionBinding: [

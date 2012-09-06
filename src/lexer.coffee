@@ -100,6 +100,16 @@ filterTokens = (tokens) ->
   
   # Add tokens INDENT/DEDENT from WHITESPACE tokens 
   for token, index in tokens
+    # Insert heading LET for binding statements 
+    if token[0] == "="
+      i = tokens_out.length - 1
+      parens = 0
+      while i >= 0 and tokens_out[i][0] not in ["TERMINATOR", "INDENT"]
+        if tokens_out[i][0] == "(" then parens++
+        if tokens_out[i][0] == ")" then parens--
+        i--
+      if parens == 0 and tokens_out[i+1][0] not in ["TYPE"]
+        tokens_out.splice(i+1, 0, ["LET", "let", token[2]])
     output_tail = if token[0] == "WHITESPACE" then [] else [token]
     new_state = if state.start_line
       new_indent = if token[0] == "WHITESPACE" then token[1].length else 0
