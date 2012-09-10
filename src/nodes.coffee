@@ -29,16 +29,83 @@ class Root
       {env, type} = node.process(env)
       node.compile(env)
     {env, output: lib.indent_code(_(output).compact().join("\n"))}
+
+## Literals
+  
+class Int
+  constructor: (@value_token) ->
+  process: (env) -> {env, type: new(env.get_type_class("Int"))}
+  compile: (env) -> @value_token
+
+class Float
+  constructor: (@value_token) ->
+  process: (env) -> {env, type: new(env.get_type_class("Float"))}
+  compile: (env) -> @value_token
+
+class String
+  constructor: (string_token) -> @value_token = eval(string_token)
+  process: (env) -> {env, type: new(env.get_type_class("String"))}
+  compile: (env) -> JSON.stringify(@value_token)
+
+class Tuple
+  constructor: (@values) ->
+  process: (env) ->
+    args = get_types_from_nodes(env, @values)
+    {env, type: new types.Tuple(args)}
+  compile: (env) ->
+    "[" + _(@values).invoke("compile", env).join(", ") + "]" 
+
+class List
+  constructor: (@values) ->
+  process: (env) ->
+    inner_type = if _(@values).isNotEmpty()
+      type0 = _.first(@values).process(env).type
+      for value in @values[1..-1]
+        type = value.process(env).type
+        types.match_types(env, type0, type) or
+          error("TypeError", "Cannot match type '#{type}' in list of '#{type0}'")
+      type0
+    else
+      new types.TypeVariable
+    klass = env.get_type_class("List")
+    list_type = new klass([inner_type])
+    {env, type: list_type}
+  compile: (env) ->
+    _list = (xs) ->
+      if _(xs).isEmpty() then "Nil" else "Cons(#{xs[0].compile(env)}, #{_list(xs[1..-1])})"
+    _list(@values) 
+
+class ArrayNode
+  constructor: (@values) ->
+  process: (env) ->
+    inner_type = if _(@values).isNotEmpty()
+      type0 = _.first(@values).process(env).type
+      for value in @values[1..-1]
+        type = value.process(env).type
+        types.match_types(env, type0, type) or
+          error("TypeError", "Cannot match type '#{type}' in array of '#{type0}'")
+      type0
+    else
+      new types.TypeVariable
+    klass = env.get_type_class("Array")
+    list_type = new klass([inner_type])
+    {env, type: list_type}
+  compile: (env) ->
+    "[" + (x.compile(env) for x in @values).join(", ") + "]"
     
 ## Statements
 
 class SymbolBinding
-  constructor: (@name, @block) ->
-  process: (env) -> 
-    type = @block.process(env).type
-    {env: env.add_binding(@name, type), type}
+  constructor: (@left, @block) ->
+  process: (env) ->
+    right_type = @block.process(env).type
+    left_type = @left.process(env).type
+    match = types.match_types(env, left_type, right_type) or
+      error("TypeError", "Cannot match types in pattern: #{left_type} <-> #{right_type}")
+    new_env = @left.process_match(env, match)
+    {env: new_env}
   compile: (env) ->
-    "var #{jsname(@name)} = #{@compile_value(env)};"
+    @left.compile(env, value: @compile_value(env))
   compile_value: (env) ->
     if lib.getClass(@block) == Expression
       @block.compile(env)
@@ -49,7 +116,47 @@ class SymbolBinding
         }).call(this)
       """
 
+class IntMatch extends Int
+  compile: (env, options) -> 
+    "api.match_values(#{super}, #{options.value});"
+  process_match: (env, match) -> env
+
+class FloatMatch extends Float
+  compile: (env, options) -> 
+    "api.match_values(#{super}, #{options.value});"
+  process_match: (env, match) -> env
+
+class StringMatch extends String
+  compile: (env, options) -> 
+    "api.match_values(#{super}, #{options.value});"
+  process_match: (env, match) -> env
+
+class IdMatch
+  constructor: (@name) ->
+    @type = new types.Variable
+  process: (env) ->
+    {env, type: @type}
+  process_match: (env, match) -> 
+    env.add_binding(@name, match[@type])
+  compile: (env, options) -> 
+    "var #{jsname(@name)} = #{options.value};" 
+
+class TupleMatch extends Tuple
+  process_match: (env, match) -> 
+    _.freduce(@values, env, (e, value) -> value.process_match(e, match))
+  compile: (env, options) ->
+    refindex = (options.refindex or 1)
+    refname = "_ref" + refindex.toString()
+    """
+      var #{refname} = #{options.value};
+      #{(value.compile(env, value: "#{refname}[#{idx}]", refindex: refindex+1) \ 
+        for value, idx in @values).join("\n")}
+    """
+
 class TraitInterfaceSymbolBinding extends SymbolBinding
+  after_transform: ->
+    # check it's a idmatch
+    @name = @left.name
   process: (env) -> 
     type = @block.process(env).type
     {env: env.add_binding(@name, type), type}
@@ -249,69 +356,6 @@ class FunctionCall
     else
       fname
     complete_fname + "(" + (arg.compile(env) for arg in sorted_args).join(', ') + ")"
-
-## Literals
-  
-class Int
-  constructor: (@value_token) ->
-  process: (env) -> {env, type: new(env.get_type_class("Int"))}
-  compile: (env) -> @value_token
-
-class Float
-  constructor: (@value_token) ->
-  process: (env) -> {env, type: new(env.get_type_class("Float"))}
-  compile: (env) -> @value_token
-
-class String
-  constructor: (string_token) -> @value = eval(string_token)
-  process: (env) -> {env, type: new(env.get_type_class("String"))}
-  compile: (env) -> JSON.stringify(@value)
-
-class Tuple
-  constructor: (@values) ->
-  process: (env) ->
-    args = get_types_from_nodes(env, @values)
-    {env, type: new types.Tuple(args)}
-  compile: (env) ->
-    "[" + _(@values).invoke("compile", env).join(", ") + "]" 
-
-class List
-  constructor: (@values) ->
-  process: (env) ->
-    inner_type = if _(@values).isNotEmpty()
-      type0 = _.first(@values).process(env).type
-      for value in @values[1..-1]
-        type = value.process(env).type
-        types.match_types(env, type0, type) or
-          error("TypeError", "Cannot match type '#{type}' in list of '#{type0}'")
-      type0
-    else
-      new types.TypeVariable
-    klass = env.get_type_class("List")
-    list_type = new klass([inner_type])
-    {env, type: list_type}
-  compile: (env) ->
-    _list = (xs) ->
-      if _(xs).isEmpty() then "Nil" else "Cons(#{xs[0].compile(env)}, #{_list(xs[1..-1])})"
-    _list(@values) 
-
-class ArrayNode
-  constructor: (@values) ->
-  process: (env) ->
-    inner_type = if _(@values).isNotEmpty()
-      type0 = _.first(@values).process(env).type
-      for value in @values[1..-1]
-        type = value.process(env).type
-        types.match_types(env, type0, type) or
-          error("TypeError", "Cannot match type '#{type}' in array of '#{type0}'")
-      type0
-    else
-      new types.TypeVariable
-    klass = env.get_type_class("Array")
-    list_type = new klass([inner_type])
-    {env, type: list_type}
-  compile: (env) ->
-    "[" + (x.compile(env) for x in @values).join(", ") + "]"
 
 ##
 
@@ -534,13 +578,15 @@ exports.node = (class_name, args...) ->
 
 exports.transformTo = (classname, instance) ->
   instance.__proto__ = exports[classname].prototype
-  instance  
+  instance.after_transform?.call(instance)
+  instance
 
 ##
 
 lib.exportClasses(exports, [
   Root
-  SymbolBinding, FunctionBinding, Restriction 
+  SymbolBinding, FunctionBinding, Restriction
+  IntMatch, FloatMatch, StringMatch, IdMatch, TupleMatch 
   TypedArgument, Type, TypeVariable, 
   TupleType, FunctionType, ListType, ArrayType
   Expression, ParenExpression, Block, StatementExpression

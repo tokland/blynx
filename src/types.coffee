@@ -20,8 +20,10 @@ class TypeBase
     new @constructor(new_args)
 
 class Variable extends TypeBase
+  @n: 0
   variable: true
-  constructor: (@name, @traits = []) -> 
+  constructor: (name, @traits = []) ->
+    @name = name or "a#{Variable.n++}" 
   toString: -> @name
   join: (namespace) -> namespace[this] or this
 

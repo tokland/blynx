@@ -568,6 +568,17 @@ tests = [
   ["""
     id(xs: A[a]): A[a] = xs
   """, should_have(bindings: {id: '(xs: A[a]) -> A[a]'})]
+  
+  # Matching
+  
+  ["""(x, y, z)  = (1, 2.5, "hello")""",
+    should_have(symbols: {x: [1, "Int"], y: [2.5, "Float"], z: ["hello", "String"]})] 
+
+  ["""(x, 1, 2.5, "hello")  = (0, 1, 2.5, "hello")""",
+    should_have(symbols: {x: [0, "Int"]})] 
+
+  ["""(a, (b, (c, d)))  = (1, (2, (3, 4)))""",
+    should_have(symbols: {a: [1, "Int"], b: [2, "Int"], c: [3, "Int"], d: [4, "Int"]})] 
 ]
 
 describe "compiler", ->
@@ -591,6 +602,15 @@ describe "compiler", ->
           for name, expected_value of values
             do (name, expected_value) ->
               it "'#{name}' should have value '#{expected_value}'", ->
+                {context, value} = compiler.run(source)
+                assert.deepEqual(context[name], expected_value, "Failed on:\n#{source}")
+        if (symbols = expected.symbols)
+          for name, [expected_value, expected_type_string] of symbols
+            do (name, expected_value, expected_type_string) ->
+              it "'#{name}' should be '#{expected_value}' : '#{expected_type_string}'", ->
+                {env} = compiler.compile(source)
+                type_string = env.get_binding(name).inspect()
+                assert.deepEqual(type_string, expected_type_string, "Failed on:\n#{source}")
                 {context, value} = compiler.run(source)
                 assert.deepEqual(context[name], expected_value, "Failed on:\n#{source}")
       else

@@ -108,13 +108,24 @@ grammar =
   ]
   
   SymbolBinding: [
-    o 'MatchExpression = BlockOrExpression', -> new SymbolBinding($1, $3)
+    o 'ExpressionMatch = BlockOrExpression', -> new SymbolBinding($1, $3)
   ]
   
-  MatchExpression: [
-    o 'ID'
-    o '( OpSymbol )', -> $2
+  ExpressionMatch: [
+    o 'ID', -> new IdMatch($1)
+    o '( OpSymbol )', -> new IdMatch($2)
+    o 'TupleMatch', -> new TupleMatch($1)
+    o 'INTEGER', -> new IntMatch($1)
+    o 'FLOAT', -> new FloatMatch($1)
+    o 'STRING', -> new StringMatch($1)
   ]
+
+  TupleMatch: [
+    o '( ExpressionMatch , ExpressionMatchList )', -> [$2].concat($4)
+  ]
+  
+  ExpressionMatchList: 
+    r 'ExpressionMatch', min: 1, join: ','
   
   FunctionBinding: [
     o 'ID ( ) : Type OptionalRestrictions = BlockOrExpression', 

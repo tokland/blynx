@@ -11,6 +11,11 @@ merge = (obj, obj2) ->
 wrap = (fn) ->
   (args...) -> fn()(args...)
   
+match_values = (value1, value2) ->
+  value1 == value2 or
+    throw new Error("RuntimeError: Values do not match: #{value1} != #{value2}") 
+  
 exports.merge = merge
 exports.extend = extend
 exports.wrap = wrap
+exports.match_values = match_values
