@@ -15,18 +15,18 @@
 #     Book 'Standard AMT Logbook' (9781560273332) -- valid
 #     Book 'How to Weld' (9780760331749) -- invalid
 #     Magazine 'Algorithms for molecular biology' (1748-7188) -- valid
+
+export(Publication, isValid)
  
 import fs
 import sys
-import re(match)
+import re(search)
 
-export(Publication, isValid)
-
-type Publication traits(Equalable, Showable) =
+type Publication traits(Eq) =
   Book(title: String, isbn: String) |
   Magazine(name: String, issn: String)
 
-trait Showable Publication
+trait Show Publication
   str(publication: Publication): String =
     match publication
       Book as book -> "Book <#{book$title}> (#{book$isbn})"
@@ -41,10 +41,10 @@ isIsbn13Valid(isbn13: String): Bool =
   # An ISBN-13 has 12 digits and a check digit:
   #
   # x13 = (10 - (x1 + 3*x2 + x3 + 3*x4 + ... + x11 + 3*x12) mod 10) mod 10
-  if not isbn13.match("^\d{13}$")
+  if not isbn13.search("^\d{13}$")
     return False
   xs = isbn13.chars.map(int)
-  factors = [1, 3].repeat(6).flatten
+  factors = [1, 3].cycle(6)
   terms = [x*factor for (x, factor) in xs.slice(0, 12).zip(factors)]
   expected_x12 = (10 - (terms.sum % 10)) % 10
   xs.get(12) == expected_x12
@@ -54,7 +54,7 @@ isIssnValid(issn: String): Bool =
   # two four-digit numbers), being the last one the check_digit: 
   # 
   # x8 = 11 - ((x1*8 + x2*7 + x3*6 + ... + x7*2) mod 11)
-  if not issn.match("^\d{4}-\d{4}$")
+  if not issn.search("^\d{4}-\d{4}$")
     return False
   xs = (issn.slice(0, 3).chars ++ issn.slice(5, 7).chars).map(int)
   terms = [x*idx for (x, idx) in xs.slice(0, 6).zip([8..2,-1])]
