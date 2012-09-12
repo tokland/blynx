@@ -107,15 +107,18 @@ class SymbolBinding
     new_env = @left.process_match(env, match)
     {env: new_env}
   compile: (env) ->
-    symbols = (jsname(s) for s in @left.get_symbols())
-    """
-      var _match = (function() {>>
-        var _match = {};
-        #{@left.compile(env, value: @compile_value(env))}
-        return _match;<<
-      }).call();
-      #{("var #{name} = _match.#{name};" for name in symbols).join("\n")} 
-    """
+    if lib.getClass(@left) == IdMatch
+      @left.compile(env, value: @compile_value(env, namespace: null))
+    else 
+      symbols = (jsname(s) for s in @left.get_symbols())
+      """
+        var _match = (function() {>>
+          var _match = {};
+          #{@left.compile(env, value: @compile_value(env), namespace: "_match")}
+          return _match;<<
+        }).call();
+        #{("var #{name} = _match.#{name};" for name in symbols).join("\n")} 
+      """
   compile_value: (env) ->
     if lib.getClass(@block) == Expression
       @block.compile(env)
@@ -154,8 +157,9 @@ class IdMatch
     type = match[@type] or
       error("TypeError", "Cannot find type #{@type} in match object #{json(match)}")
     env.add_binding(@name, type)
-  compile: (env, options) -> 
-    "_match.#{jsname(@name)} = #{options.value};" 
+  compile: (env, options) ->
+    ns = if options.namespace then "#{options.namespace}." else "" 
+    "#{ns}#{jsname(@name)} = #{options.value};" 
 
 class TupleMatch extends Tuple
   process_match: (env, match) -> 
@@ -166,7 +170,7 @@ class TupleMatch extends Tuple
     refname = "_ref" + refindex.toString()
     """
       var #{refname} = #{options.value};
-      #{(value.compile(env, value: "#{refname}[#{idx}]", refindex: refindex+1) \ 
+      #{(value.compile(env, _(options).merge(value: "#{refname}[#{idx}]", refindex: refindex+1)) \ 
         for value, idx in @values).join("\n")}
     """
     
@@ -195,7 +199,7 @@ class AdtMatch
     """
       var #{refname} = #{options.value};
       api.match_values(#{json(@name)}, #{refname}._name)
-      #{(a.compile(env, value: "#{refname}[#{json(get_key(a))}]", refindex: refindex+1) \
+      #{(a.compile(env, _(options).merge(value: "#{refname}[#{json(get_key(a))}]", refindex: refindex+1)) \
         for a, idx in @args).join("\n")} 
     """
 
