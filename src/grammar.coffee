@@ -118,7 +118,25 @@ grammar =
     o 'INTEGER', -> new IntMatch($1)
     o 'FLOAT', -> new FloatMatch($1)
     o 'STRING', -> new StringMatch($1)
+    o 'AdtMatch'
   ]
+  
+  AdtMatch: [
+    o 'CAPID AdtArgumentListOptional', -> new AdtMatch($1, $2)
+  ]
+  
+  AdtArgumentListOptional: [
+    o '( AdtArgumentMatchList )', -> $2
+    o ''
+  ]
+    
+  AdtArgumentMatchList:
+    r 'AdtArgumentMatch', min: 1, join: ','
+
+  AdtArgumentMatch: [
+    o 'ExpressionMatch', -> new AdtArgumentMatch("", $1)
+    o 'ID = ExpressionMatch', -> new AdtArgumentMatch($1, $3)
+  ]     
 
   TupleMatch: [
     o '( ExpressionMatch , ExpressionMatchList )', -> [$2].concat($4)

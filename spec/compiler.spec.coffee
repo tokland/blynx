@@ -4,6 +4,7 @@ compiler = require 'compiler'
 _ = require 'underscore_extensions'
 
 should_throw = (error) -> {_should_throw: true, error}
+should_throw_runtime = (error) -> {_should_throw_runtime: true, error}
 should_have = (what) -> _(what).merge(_should_have: true)
   
 tests = [
@@ -569,7 +570,9 @@ tests = [
     id(xs: A[a]): A[a] = xs
   """, should_have(bindings: {id: '(xs: A[a]) -> A[a]'})]
   
-  # Matching
+  ## Matching
+  
+  # Tuple
   
   ["""(x, y, z)  = (1, 2.5, "hello")""",
     should_have(symbols: {x: [1, "Int"], y: [2.5, "Float"], z: ["hello", "String"]})] 
@@ -578,7 +581,36 @@ tests = [
     should_have(symbols: {x: [0, "Int"]})] 
 
   ["""(a, (b, (c, d)))  = (1, (2, (3, 4)))""",
-    should_have(symbols: {a: [1, "Int"], b: [2, "Int"], c: [3, "Int"], d: [4, "Int"]})] 
+    should_have(symbols: {a: [1, "Int"], b: [2, "Int"], c: [3, "Int"], d: [4, "Int"]})]
+
+  ["""(a, 2)  = (1, "hello")""",
+    should_throw(/TypeError: Cannot match types in pattern/)]
+    
+  ["""(a, 2) = (1, 3)""",
+    should_throw_runtime("RuntimeError: Values do not match: 2 != 3")]
+
+  # ADT 
+
+  ["""
+    type Either(a, b) = Left(value: a) | Right(value: b)
+    Right(value=x) = Right(5)
+   """, should_have(symbols: {x: [5, "Int"]})] 
+
+  ["""
+    type Either(a, b) = Left(value: a) | Right2(value1: a, value2: b)
+    Right2(value1=x, value2=y) = Right2(5, "bye")
+   """, should_have(symbols: {x: [5, "Int"], y: ["bye", "String"]})] 
+
+  ["""
+    type Either(a, b) = Left(value: a) | Right(value: b)
+    type Maybe(a) = Just(value: a) | Nothing
+    Just(value=x) = Right(5)
+   """, should_throw(/TypeError: Cannot match types in pattern/)]
+    
+  ["""
+    type Either(a, b) = Left(value: a) | Right(value: b)
+    Left(value=x) = Right(5)
+   """, should_throw_runtime("RuntimeError: Values do not match: Left != Right")] 
 ]
 
 describe "compiler", ->
@@ -589,6 +621,11 @@ describe "compiler", ->
         msg = expected.error
         it "should throw exception:\n\n#{source}", ->
           (-> compiler.compile(source)).
+            should.throw(msg, "Failed on #{source}")
+      else if expected._should_throw_runtime
+        msg = expected.error
+        it "should throw runtime exception:\n\n#{source}", ->
+          (-> compiler.run(source)).
             should.throw(msg, "Failed on #{source}")
       else if expected._should_have
         if (bindings = expected.bindings)

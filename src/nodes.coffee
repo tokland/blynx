@@ -4,10 +4,12 @@ types = require 'types'
 _ = require 'underscore_extensions'
 {error, debug} = lib
 
+json = JSON.stringify
+
 render = (template, namespace) ->
   eco.render template, _(namespace).merge
     escape: (s) -> s
-    json: JSON.stringify
+    json: json
     jsname: jsname
   
 jsname = (s) ->
@@ -136,8 +138,10 @@ class IdMatch
     @type = new types.Variable
   process: (env) ->
     {env, type: @type}
-  process_match: (env, match) -> 
-    env.add_binding(@name, match[@type])
+  process_match: (env, match) ->
+    type = match[@type] or
+      error("TypeError", "Cannot find type #{@type} in match object #{json(match)}")
+    env.add_binding(@name, type)
   compile: (env, options) -> 
     "var #{jsname(@name)} = #{options.value};" 
 
@@ -152,10 +156,38 @@ class TupleMatch extends Tuple
       #{(value.compile(env, value: "#{refname}[#{idx}]", refindex: refindex+1) \ 
         for value, idx in @values).join("\n")}
     """
+    
+class AdtArgumentMatch
+  constructor: (@name, @value) ->
+  process: (env) ->
+    @value.process(env)
+  process_match: (env, match) ->
+    @value.process_match(env, match)
+  compile: (env, options) ->
+    @value.compile(env, options) 
+    
+class AdtMatch
+  constructor: (@name, @args) ->
+  process: (env) ->
+    (new FunctionCall(new Symbol(@name), @args)).process(env)
+  process_match: (env, match) ->
+    _.freduce(@args, env, (e, arg) -> arg.process_match(e, match))
+  compile: (env, options) ->
+    refindex = (options.refindex or 1)
+    refname = "_ref#{refindex}"
+    type_keys = env.get_binding(@name).args.get_keys()
+    get_key = (arg) -> if arg.name then arg.name else type_keys[idx]
+    """
+      var #{refname} = #{options.value};
+      api.match_values(#{json(@name)}, #{refname}._name)
+      #{(a.compile(env, value: "#{refname}[#{json(get_key(a))}]", refindex: refindex+1) \
+        for a, idx in @args).join("\n")} 
+    """
 
 class TraitInterfaceSymbolBinding extends SymbolBinding
   after_transform: ->
-    # check it's a idmatch
+    lib.getClass(@left) == IdMatch or
+      error("ValueError", "Pattern matching is not allowed in trait interfaces")
     @name = @left.name
   process: (env) -> 
     type = @block.process(env).type
@@ -379,7 +411,8 @@ class TypeConstructorDefinition
       "var #{@name} = {};"
     else
       names = _(@args).pluck("name")
-      val = "{" + ("#{JSON.stringify(n)}: #{n}" for n in names) + "}"
+      pairs = ("#{json(n)}: #{n}" for n in names).concat(["\"_name\": \"#{@name}\""])
+      val = "{" + pairs.join(", ") + "}"
       "var #{@name} = function(#{names.join(', ')}) { return #{val}; };"
   add_binding: (env, type, type_args) ->
     type = new type(type_args)
@@ -586,7 +619,7 @@ exports.transformTo = (classname, instance) ->
 lib.exportClasses(exports, [
   Root
   SymbolBinding, FunctionBinding, Restriction
-  IntMatch, FloatMatch, StringMatch, IdMatch, TupleMatch 
+  IntMatch, FloatMatch, StringMatch, IdMatch, TupleMatch, AdtArgumentMatch, AdtMatch
   TypedArgument, Type, TypeVariable, 
   TupleType, FunctionType, ListType, ArrayType
   Expression, ParenExpression, Block, StatementExpression
