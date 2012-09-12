@@ -107,7 +107,15 @@ class SymbolBinding
     new_env = @left.process_match(env, match)
     {env: new_env}
   compile: (env) ->
-    @left.compile(env, value: @compile_value(env))
+    symbols = (jsname(s) for s in @left.get_symbols())
+    """
+      var _match = (function() {>>
+        var _match = {};
+        #{@left.compile(env, value: @compile_value(env))}
+        return _match;<<
+      }).call();
+      #{("var #{name} = _match.#{name};" for name in symbols).join("\n")} 
+    """
   compile_value: (env) ->
     if lib.getClass(@block) == Expression
       @block.compile(env)
@@ -119,35 +127,40 @@ class SymbolBinding
       """
 
 class IntMatch extends Int
-  compile: (env, options) -> 
-    "api.match_values(#{super}, #{options.value});"
   process_match: (env, match) -> env
+  get_symbols: -> []
+  compile: (env, options) -> 
+    "api.match_values(#{super}, #{options.value});"  
 
 class FloatMatch extends Float
-  compile: (env, options) -> 
-    "api.match_values(#{super}, #{options.value});"
   process_match: (env, match) -> env
+  get_symbols: -> []
+  compile: (env, options) -> 
+    "api.match_values(#{super}, #{options.value});"  
 
 class StringMatch extends String
-  compile: (env, options) -> 
-    "api.match_values(#{super}, #{options.value});"
   process_match: (env, match) -> env
+  get_symbols: -> []
+  compile: (env, options) -> 
+    "api.match_values(#{super}, #{options.value});"  
 
 class IdMatch
   constructor: (@name) ->
     @type = new types.Variable
   process: (env) ->
     {env, type: @type}
+  get_symbols: -> [@name]
   process_match: (env, match) ->
     type = match[@type] or
       error("TypeError", "Cannot find type #{@type} in match object #{json(match)}")
     env.add_binding(@name, type)
   compile: (env, options) -> 
-    "var #{jsname(@name)} = #{options.value};" 
+    "_match.#{jsname(@name)} = #{options.value};" 
 
 class TupleMatch extends Tuple
   process_match: (env, match) -> 
     _.freduce(@values, env, (e, value) -> value.process_match(e, match))
+  get_symbols: -> _.flatten1(value.get_symbols() for value in @values)
   compile: (env, options) ->
     refindex = (options.refindex or 1)
     refname = "_ref" + refindex.toString()
@@ -161,6 +174,7 @@ class AdtArgumentMatch
   constructor: (@name, @value) ->
   process: (env) ->
     @value.process(env)
+  get_symbols: -> @value.get_symbols()
   process_match: (env, match) ->
     @value.process_match(env, match)
   compile: (env, options) ->
@@ -168,6 +182,7 @@ class AdtArgumentMatch
     
 class AdtMatch
   constructor: (@name, @args) ->
+  get_symbols: -> _.flatten1(arg.get_symbols() for arg in @args)
   process: (env) ->
     (new FunctionCall(new Symbol(@name), @args)).process(env)
   process_match: (env, match) ->
