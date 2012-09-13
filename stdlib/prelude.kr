@@ -1,0 +1,125 @@
+type Unit = Unit
+
+identity(x: a): a = x
+
+# type Bool
+
+type Bool = True | False
+
+not(x: Bool): Bool =
+  if x then False else True
+
+(||)(x: Bool, y: Bool): Bool =
+  # if x then True else (if b then True else False)
+  match (x, y)
+    (False, False) -> False
+    other -> True 
+
+(&&)(x: Bool, y: Bool): Bool =
+  # if x then (if b then True else False) else False 
+  match (x, y)
+    (True, True) -> True
+    other -> False
+
+# type String
+
+external '+' as (+++): (String, String) -> String
+
+# type List
+
+type List(a) = Nil | Cons(head: a, tail: [a])
+
+length(xs: [a]): Int = 
+  _length(ys: [a], acc: Int): Int =
+    match ys
+      [] -> acc
+      [y|yts] -> _length(yts, acc + 1)
+  _length(xs, 0)
+   
+(++)(xs: [a], ys: [a]): [a] = 
+  match xs
+    [x|xst] -> x::(xst ++ ys)
+    [] -> ys
+
+# join(xs: [String], s: String): String = ...
+
+# type Maybe
+
+type Maybe(a) = Nothing | Just(value: a)
+
+or(maybe: Maybe(a), default: a): a =
+  match maybe
+    Nothing -> default
+    Just(x) -> x 
+
+# trait Num
+
+interface Num of a
+  (+), (-), (*), (/): (a, a) -> a
+
+external '+' as int_add: (Int, Int) -> Int
+external '-' as int_sub: (Int, Int) -> Int
+external '*' as int_mul: (Int, Int) -> Int
+external '/' as int_div: (Int, Int) -> Int
+
+implement Num of Int
+  (+) = int_add
+  (-) = int_sub
+  (*) = int_mul
+  (/) = int_div
+
+external '+' as float_add: (Float, Float) -> Float
+external '-' as float_sub: (Float, Float) -> Float
+external '*' as float_mul: (Float, Float) -> Float
+external '/' as float_div: (Float, Float) -> Float
+
+implement Num of Float
+  (+) = float_add
+  (-) = float_sub
+  (*) = float_mul
+  (/) = float_div
+
+# trait Eq
+
+interface Eq of a
+  (==): (a, a) -> Bool
+  (!=): (a, a) -> Bool
+  
+  (==)(x: a, y: a): Bool = not(x != y)
+  (!=)(x: a, y: a): Bool = not(x == y)
+
+# trait Ord
+
+type Ordering = LT | EQ | GT
+
+interface Ord of a where(a@Num)
+  cmp: (a, a) -> Ordering
+  (<)(x: a, y: a): Bool = cmp(x, y) == LT
+  (<=)(x: a, y: a): Bool = cmp(x, y) != GT
+  (>)(x: a, y: a): Bool = cmp(x, y) == GT
+  (>=)(x: a, y: a): Bool = cmp(x, y) != LT
+
+# trait Show
+
+interface Show a
+  str: (a) -> String
+
+external 'api.to_string' as int_to_string: (Int) -> Unit
+external 'api.to_string' as float_to_string: (Float) -> Unit
+
+implement Show String
+  str = identity
+
+implement Show Int
+  str = int_to_string
+
+implement Show Float
+  str = float_to_string
+
+implement Show [a] where(a@Show)
+  str(xs: [a]): String = "[" +++ [str(x) for x in xs].join(', ') +++ "]"
+
+# Misc
+
+external 'console.log' as string_print: (String) -> Unit
+print(value: a): Unit where(a@Show) = string_print(str(value))
