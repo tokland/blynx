@@ -10,16 +10,10 @@ not(x: Bool): Bool =
   if x then False else True
 
 (||)(x: Bool, y: Bool): Bool =
-  # if x then True else (if b then True else False)
-  match (x, y)
-    (False, False) -> False
-    other -> True 
-
+  if x then True else (if b then True else False)
+  
 (&&)(x: Bool, y: Bool): Bool =
-  # if x then (if b then True else False) else False 
-  match (x, y)
-    (True, True) -> True
-    other -> False
+  if x then (if b then True else False) else False 
 
 # type String
 

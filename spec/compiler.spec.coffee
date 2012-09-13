@@ -609,6 +609,11 @@ tests = [
 
   ["""
     type Either(a, b) = Left(value: a) | Right(value: b)
+    Right(x) = Right(5)
+   """, should_have(symbols: {x: [5, "Int"]})] 
+
+  ["""
+    type Either(a, b) = Left(value: a) | Right(value: b)
     Right(value=x) = Right(5)
    """, should_have(symbols: {x: [5, "Int"]})] 
 
@@ -627,6 +632,11 @@ tests = [
     type Either(a, b) = Left(value: a) | Right(value: b)
     Left(value=x) = Right(5)
    """, should_throw_runtime("RuntimeError: Values do not match: Left != Right")] 
+
+  ["""
+    type Either(a, b) = Left(value: a) | Right(value: b)
+    Left(nonexisting=x) = Right(1)
+   """, should_throw_runtime("ArgumentError: Argument not found: nonexisting")] 
 
   # Lists
   
