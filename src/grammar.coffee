@@ -119,6 +119,16 @@ grammar =
     o 'FLOAT', -> new FloatMatch($1)
     o 'STRING', -> new StringMatch($1)
     o 'AdtMatch'
+    o 'ListMatch'
+  ]
+
+  ListMatch: [
+    o '[ ExpressionMatchList OptionalTail ]', -> new ListMatch($2, $3)
+  ]
+  
+  OptionalTail: [
+    o '', -> null
+    o '| ID', -> $2
   ]
   
   AdtMatch: [
@@ -139,11 +149,11 @@ grammar =
   ]     
 
   TupleMatch: [
-    o '( ExpressionMatch , ExpressionMatchList )', -> [$2].concat($4)
+    o '( ExpressionMatchList )', -> $2
   ]
   
   ExpressionMatchList: 
-    r 'ExpressionMatch', min: 1, join: ','
+    r 'ExpressionMatch', min: 0, join: ','
   
   FunctionBinding: [
     o 'ID ( ) : Type OptionalRestrictions = BlockOrExpression', 

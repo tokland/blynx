@@ -5,6 +5,7 @@ _ = require 'underscore_extensions'
 
 should_throw = (error) -> {_should_throw: true, error}
 should_throw_runtime = (error) -> {_should_throw_runtime: true, error}
+should_not_throw_runtime = () -> {_should_not_throw_runtime: true}
 should_have = (what) -> _(what).merge(_should_have: true)
   
 tests = [
@@ -545,7 +546,7 @@ tests = [
   ["""
     type List(a) = Nil | Cons(head: a, tail: [a])
     xs = [1, 2, "hello"]
-  """, should_throw("TypeError: Cannot match type 'String' in list of 'Int'")]
+  """, should_throw("TypeError: Cannot match type 'String' with 'Int'")]
 
   ["""
     type List(a) = Nil | Cons(head: a, tail: [a])
@@ -564,7 +565,7 @@ tests = [
 
   ["""
     xs = A[1, 2, "hello"]
-  """, should_throw("TypeError: Cannot match type 'String' in array of 'Int'")]
+  """, should_throw("TypeError: Cannot match type 'String' with 'Int'")]
 
   ["""
     id(xs: A[a]): A[a] = xs
@@ -572,6 +573,21 @@ tests = [
   
   ## Matching
   
+  # Literals
+  
+  ["""
+    1 = 1
+    1.23 = 1.23
+    "hello" = "hello"
+   """,
+    should_not_throw_runtime()] 
+  
+  ["""1 = 2""",
+    should_throw_runtime()] 
+
+  ['1 = "hello"',
+    should_throw_runtime()] 
+
   # Tuple
   
   ["""(x, y, z)  = (1, 2.5, "hello")""",
@@ -611,6 +627,40 @@ tests = [
     type Either(a, b) = Left(value: a) | Right(value: b)
     Left(value=x) = Right(5)
    """, should_throw_runtime("RuntimeError: Values do not match: Left != Right")] 
+
+  # Lists
+  
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: [a])
+    [] = []
+    [1] = [1]
+    [1, 2] = [1, 2]
+  """, should_not_throw_runtime()]
+
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: [a])
+    [x, y] = []
+  """, should_throw_runtime("RuntimeError: Cannot match list: pattern too long")]
+
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: [a])
+    [x, y] = [1]
+  """, should_throw_runtime("RuntimeError: Cannot match list: pattern too long")]
+
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: [a])
+    [x, y] = [1, 2]
+  """, should_have(symbols: {x: [1, "Int"], y: [2, "Int"]})]
+
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: [a])
+    [1, x, 3, y] = [1, 2, 3, 4]
+  """, should_have(symbols: {x: [2, "Int"], y: [4, "Int"]})]
+
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: [a])
+    [x, y| tail] = [1, 2]
+  """, should_have(symbols: {x: [1, "Int"], y: [2, "Int"]}, bindings: {tail: "[Int]"})]
 ]
 
 describe "compiler", ->
@@ -627,6 +677,10 @@ describe "compiler", ->
         it "should throw runtime exception:\n\n#{source}", ->
           (-> compiler.run(source)).
             should.throw(msg, "Failed on #{source}")
+      else if expected._should_not_throw_runtime
+        it "should not throw runtime exception:\n\n#{source}", ->
+          (-> compiler.run(source)).
+            should.not.throw(msg, "Failed on #{source}")
       else if expected._should_have
         if (bindings = expected.bindings)
           for name, expected_type_string of bindings

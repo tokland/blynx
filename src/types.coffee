@@ -5,7 +5,7 @@ lib = require 'lib'
 
 class TypeBase
   constructor: (args) ->
-    @args = args
+    @args = args or []
     @name = @constructor.name
   toString: -> @name
   inspect: -> @toString()
@@ -50,6 +50,7 @@ class NamedTuple extends TypeBase
   toString: -> "(" + (((if k then "#{k}: " else "") + t) for [k, t] in @args).join(", ") + ")"
   get_keys: -> (k for [k, v] in @args)
   get_types: -> (v for [k, v] in @args)
+  get_type: (key) -> _.first(v for [k, v] in @args when k == key)
   join: (namespace) ->
     new_args = ([k, t.join(namespace)] for [k, t] in @args)
     new @constructor(new_args)
@@ -104,7 +105,9 @@ exports.match_types = match_types = (env, expected, given) ->
       error("TypeError", "type '#{given}' does not implement trait '#{trait}'")
     _.mash([[expected, given]])
   else if expected.variable and given.variable
-    if expected.name != given.name then  _.mash([[expected, given]]) else {}
+    if expected.name != given.name then  _.mash([[expected, given], [given, expected]]) else {}
+  else if !expected.variable and given.variable
+    _.mash([[given, expected]])
   else if expected.name == given.name
     expected_types = expected.get_types()
     given_types = given.get_types()

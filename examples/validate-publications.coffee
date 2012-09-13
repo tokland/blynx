@@ -20,7 +20,7 @@ export(Publication, isValid)
  
 import fs
 import sys
-import re(search)
+import re(matches)
 
 type Publication traits(Eq) =
   Book(title: String, isbn: String) |
@@ -41,7 +41,7 @@ isIsbn13Valid(isbn13: String): Bool =
   # An ISBN-13 has 12 digits and a check digit:
   #
   # x13 = (10 - (x1 + 3*x2 + x3 + 3*x4 + ... + x11 + 3*x12) mod 10) mod 10
-  if not isbn13.search("^\d{13}$")
+  if not isbn13.matches("^\d{13}$")
     return False
   xs = isbn13.chars.map(int)
   factors = [1, 3].cycle(6)
@@ -54,16 +54,19 @@ isIssnValid(issn: String): Bool =
   # two four-digit numbers), being the last one the check_digit: 
   # 
   # x8 = 11 - ((x1*8 + x2*7 + x3*6 + ... + x7*2) mod 11)
-  if not issn.search("^\d{4}-\d{4}$")
-    return False
-  xs = (issn.slice(0, 3).chars ++ issn.slice(5, 7).chars).map(int)
-  terms = [x*idx for (x, idx) in xs.slice(0, 6).zip([8..2,-1])]
-  check_digit = 11 - (terms.sum % 11)
-  expected_x7 = match check_digit
-    11 -> "0"
-    10 -> "X"
-    other -> other.str
-  issn.get(8) == expected_x7
+#  match issn
+#    /^(\d{4})-(\d{4})$/ as matches -> matches[0] ++ matches[1] 
+  case issn.matches("^\d{4}-\d{4}$")
+    False -> False
+    True ->
+      xs = (issn.slice(0, 3).chars ++ issn.slice(5, 7).chars).map(int)
+      terms = [x*idx for (x, idx) in xs.slice(0, 6).zip([8..2,-1])]
+      check_digit = 11 - (terms.sum % 11)
+      expected_x7 = match check_digit
+        11 -> "0"
+        10 -> "X"
+        other -> other.str
+      issn.get(8) == expected_x7
 
 getPublicationsFromFile(path: String): impure [Publication] =
   parseLine(line: String): Maybe(Publication) =

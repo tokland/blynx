@@ -6,8 +6,8 @@ _ = require 'underscore_extensions'
 
 json = JSON.stringify
 
-render = (template, namespace) ->
-  eco.render template, _(namespace).merge
+render = (template, locals) ->
+  eco.render template, _(locals).merge
     escape: (s) -> s
     json: json
     jsname: jsname
@@ -18,6 +18,20 @@ jsname = (s) ->
 
 get_types_from_nodes = (env, nodes) ->
   (node.process(env).type for node in nodes)
+
+build_enumerable = (env, values, type_class) ->
+  inner_type = if _(values).isNotEmpty()
+    type0 = _.first(values).process(env).type
+    for value in values[1..-1]
+      type = value.process(env).type
+      match = types.match_types(env, type0, type) or
+        error("TypeError", "Cannot match type '#{type}' with '#{type0}'")
+      type0 = type0.join(match)
+    type0
+  else
+    new types.Variable
+  klass = env.get_type_class(type_class)
+  new klass([inner_type])
 
 native_binary_operators = "+ - * / % < <= == > >= || &&".split(" ")
 native_unary_operators = "+ - !".split(" ")
@@ -60,17 +74,7 @@ class Tuple
 class List
   constructor: (@values) ->
   process: (env) ->
-    inner_type = if _(@values).isNotEmpty()
-      type0 = _.first(@values).process(env).type
-      for value in @values[1..-1]
-        type = value.process(env).type
-        types.match_types(env, type0, type) or
-          error("TypeError", "Cannot match type '#{type}' in list of '#{type0}'")
-      type0
-    else
-      new types.TypeVariable
-    klass = env.get_type_class("List")
-    list_type = new klass([inner_type])
+    list_type = build_enumerable(env, @values, "List")
     {env, type: list_type}
   compile: (env) ->
     _list = (xs) ->
@@ -80,45 +84,48 @@ class List
 class ArrayNode
   constructor: (@values) ->
   process: (env) ->
-    inner_type = if _(@values).isNotEmpty()
-      type0 = _.first(@values).process(env).type
-      for value in @values[1..-1]
-        type = value.process(env).type
-        types.match_types(env, type0, type) or
-          error("TypeError", "Cannot match type '#{type}' in array of '#{type0}'")
-      type0
-    else
-      new types.TypeVariable
-    klass = env.get_type_class("Array")
-    list_type = new klass([inner_type])
-    {env, type: list_type}
+    array_type = build_enumerable(env, @values, "Array")
+    {env, type: array_type}
   compile: (env) ->
     "[" + (x.compile(env) for x in @values).join(", ") + "]"
     
 ## Statements
 
+check_literal_type = (env, node, type) -> 
+  node_type = node.process(env).type
+  types.match_types(env, type, node_type) or 
+    error("TypeError", "Cannot match types in pattern: #{type} != #{node_type}") 
+  env
+
+class IntMatch extends Int
+  get_symbols: -> []
+  process_match: (env, type) -> check_literal_type(env, this, type)
+  match_object: (env, type) ->
+    {kind: "Int", value: parseInt(@value_token)}  
+
+class FloatMatch extends Float
+  get_symbols: -> []
+  process_match: (env, type) -> check_literal_type(env, this, type)
+  match_object: (env) -> {kind: "Float", value: parseFloat(@value_token)}
+
+class StringMatch extends String
+  get_symbols: -> []
+  process_match: (env, type) -> check_literal_type(env, this, type)
+  match_object: (env) -> {kind: "String", value: @value_token}
+
 class SymbolBinding
   constructor: (@left, @block) ->
   process: (env) ->
-    right_type = @block.process(env).type
-    left_type = @left.process(env).type
-    match = types.match_types(env, left_type, right_type) or
-      error("TypeError", "Cannot match types in pattern: #{left_type} <-> #{right_type}")
-    new_env = @left.process_match(env, match)
-    {env: new_env}
+    type = @block.process(env).type
+    {env: @left.process_match(env, type), type: @block.process(env).type}
   compile: (env) ->
     if lib.getClass(@left) == IdMatch
-      @left.compile(env, value: @compile_value(env, namespace: null))
-    else 
+      "var #{jsname(@left.name)} = #{@compile_value(env)};"
+    else
       symbols = (jsname(s) for s in @left.get_symbols())
-      """
-        var _match = (function() {>>
-          var _match = {};
-          #{@left.compile(env, value: @compile_value(env), namespace: "_match")}
-          return _match;<<
-        }).call();
-        #{("var #{name} = _match.#{name};" for name in symbols).join("\n")} 
-      """
+      "var _match = api.match(#{json(@left.match_object(env))}, #{@compile_value(env)});\n" +
+        (if _(symbols).isNotEmpty() then \
+          "var #{(("#{name} = _match.#{name}") for name in symbols).join(', ')};" else "") 
   compile_value: (env) ->
     if lib.getClass(@block) == Expression
       @block.compile(env)
@@ -128,80 +135,48 @@ class SymbolBinding
           #{@block.compile(env, return: true)}<<
         }).call(this)
       """
-
-class IntMatch extends Int
-  process_match: (env, match) -> env
-  get_symbols: -> []
-  compile: (env, options) -> 
-    "api.match_values(#{super}, #{options.value});"  
-
-class FloatMatch extends Float
-  process_match: (env, match) -> env
-  get_symbols: -> []
-  compile: (env, options) -> 
-    "api.match_values(#{super}, #{options.value});"  
-
-class StringMatch extends String
-  process_match: (env, match) -> env
-  get_symbols: -> []
-  compile: (env, options) -> 
-    "api.match_values(#{super}, #{options.value});"  
-
 class IdMatch
   constructor: (@name) ->
-    @type = new types.Variable
-  process: (env) ->
-    {env, type: @type}
+  process_match: (env, type) -> env.add_binding(@name, type)
   get_symbols: -> [@name]
-  process_match: (env, match) ->
-    type = match[@type] or
-      error("TypeError", "Cannot find type #{@type} in match object #{json(match)}")
-    env.add_binding(@name, type)
-  compile: (env, options) ->
-    ns = if options.namespace then "#{options.namespace}." else "" 
-    "#{ns}#{jsname(@name)} = #{options.value};" 
+  match_object: (env) -> {kind: "symbol", name: jsname(@name)}
 
 class TupleMatch extends Tuple
-  process_match: (env, match) -> 
-    _.freduce(@values, env, (e, value) -> value.process_match(e, match))
   get_symbols: -> _.flatten1(value.get_symbols() for value in @values)
-  compile: (env, options) ->
-    refindex = (options.refindex or 1)
-    refname = "_ref" + refindex.toString()
-    """
-      var #{refname} = #{options.value};
-      #{(value.compile(env, _(options).merge(value: "#{refname}[#{idx}]", refindex: refindex+1)) \ 
-        for value, idx in @values).join("\n")}
-    """
+  process_match: (env, type) ->
+    _.freduce(_.zip(@values, type.get_types()), env, (e, [v, t]) -> v.process_match(e, t))
+  match_object: (env) ->
+    {kind: "Tuple", value: (value.match_object(env) for value in @values)}
     
 class AdtArgumentMatch
   constructor: (@name, @value) ->
-  process: (env) ->
-    @value.process(env)
+  match_object: (env) -> {kind: "adt_arg", name: @name, value: @value.match_object(env)}    
   get_symbols: -> @value.get_symbols()
-  process_match: (env, match) ->
-    @value.process_match(env, match)
-  compile: (env, options) ->
-    @value.compile(env, options) 
     
 class AdtMatch
   constructor: (@name, @args) ->
   get_symbols: -> _.flatten1(arg.get_symbols() for arg in @args)
-  process: (env) ->
-    (new FunctionCall(new Symbol(@name), @args)).process(env)
-  process_match: (env, match) ->
-    _.freduce(@args, env, (e, arg) -> arg.process_match(e, match))
-  compile: (env, options) ->
-    refindex = (options.refindex or 1)
-    refname = "_ref#{refindex}"
-    type_keys = env.get_binding(@name).args.get_keys()
-    get_key = (arg) -> if arg.name then arg.name else type_keys[idx]
-    """
-      var #{refname} = #{options.value};
-      api.match_values(#{json(@name)}, #{refname}._name)
-      #{(a.compile(env, _(options).merge(value: "#{refname}[#{json(get_key(a))}]", refindex: refindex+1)) \
-        for a, idx in @args).join("\n")} 
-    """
+  match_object: (env) ->
+    {kind: "adt", name: @name, args: (arg.match_object(env) for arg in @args)}
+  process_match: (env, type) ->
+    function_type = env.get_binding(@name)
+    namespace = types.match_types(env, function_type.result, type) or
+      error("TypeError", "Cannot match types in pattern: #{function_type.result} != #{type}")
+    _.freduce @args, env, (env_acc, arg) ->
+      arg_type = function_type.args.join(namespace).get_type(arg.name) 
+      arg.value.process_match(env_acc, arg_type)
+
+class ListMatch
+  constructor: (@expressions, @tail) ->
+  get_symbols: -> 
+    _.flatten1(expr.get_symbols() for expr in @expressions).concat(_.compact([@tail]))
+  match_object: (env) ->
+    {kind: "list", values: (expr.match_object(env) for expr in @expressions), tail: @tail}
+  process_match: (env, type) ->
+    inner_type = type.get_types()[0]
+    new_env = _.freduce @expressions, env, ((env_acc, expr) -> 
+      expr.process_match(env_acc, inner_type))
+    if @tail then new_env.add_binding(@tail, type) else new_env
 
 class TraitInterfaceSymbolBinding extends SymbolBinding
   after_transform: ->
@@ -427,7 +402,7 @@ class TypeConstructorDefinition
   constructor: (@name, @args) ->
   compile: (env) ->
     if _(@args).isEmpty()
-      "var #{@name} = {};"
+      "var #{@name} = {_name: #{json(@name)}};"
     else
       names = _(@args).pluck("name")
       pairs = ("#{json(n)}: #{n}" for n in names).concat(["\"_name\": \"#{@name}\""])
@@ -638,7 +613,7 @@ exports.transformTo = (classname, instance) ->
 lib.exportClasses(exports, [
   Root
   SymbolBinding, FunctionBinding, Restriction
-  IntMatch, FloatMatch, StringMatch, IdMatch, TupleMatch, AdtArgumentMatch, AdtMatch
+  IntMatch, FloatMatch, StringMatch, IdMatch, TupleMatch, AdtArgumentMatch, AdtMatch, ListMatch
   TypedArgument, Type, TypeVariable, 
   TupleType, FunctionType, ListType, ArrayType
   Expression, ParenExpression, Block, StatementExpression
