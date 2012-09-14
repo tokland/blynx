@@ -352,7 +352,7 @@ class FunctionCall
     given_args = new types.NamedTuple([a.name, a.process(env).type] for a in @args)
     merged = function_args.merge(given_args)
     namespace = types.match_types(env, function_args, merged) or
-      error("TypeError", "function '#{function_type}', called with arguments '#{merged}'")
+      error("TypeError", "function '#{function_type}' called with arguments '#{merged}'")
     function_type.join(namespace)
   process: (env) ->
     check_function_type = (function_type) =>

@@ -45,7 +45,7 @@ tests = [
   ["""
     type Entity = Square(side: Int) | Point
     Square(1.23)
-  """, should_throw("TypeError: function '(side: Int) -> Entity', called with arguments '(side: Float)'")]
+  """, should_throw("TypeError: function '(side: Int) -> Entity' called with arguments '(side: Float)'")]
 
   # ADT with type arguments
   
@@ -120,7 +120,7 @@ tests = [
   ["""
     f(x: Int): Float = 1.23
     f("hello")
-   """, should_throw("TypeError: function '(x: Int) -> Float', called with arguments '(x: String)'")]
+   """, should_throw("TypeError: function '(x: Int) -> Float' called with arguments '(x: String)'")]
 
   ["""
     f1(x: Int): Float = x
@@ -278,6 +278,16 @@ tests = [
         g: "(x: Int, f2: (arg_x: Int) -> Int) -> Int", 
         x: "Int"
   ]
+
+  ["""
+    f(x: a, y: a, z: b): b = z
+    a = f(1, 2, "hello")
+  """, should_have(symbols: {a: ["hello", "String"]})]
+
+  ["""
+    f(x: a, y: a, z: b): b = z
+    f(1, "hello", 2)
+  """, should_throw("TypeError: function '(x: a, y: a, z: b) -> b' called with arguments '(x: Int, y: String, z: Int)'")]
 
   # Infix operators
   

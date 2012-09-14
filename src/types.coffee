@@ -105,7 +105,7 @@ exports.match_types = match_types = (env, expected, given) ->
       error("TypeError", "type '#{given}' does not implement trait '#{trait}'")
     _.mash([[expected, given]])
   else if expected.variable and given.variable
-    if expected.name != given.name then  _.mash([[expected, given], [given, expected]]) else {}
+    {}
   else if !expected.variable and given.variable
     _.mash([[given, expected]])
   else if expected.name == given.name
@@ -117,7 +117,13 @@ exports.match_types = match_types = (env, expected, given) ->
       else
         namespaces = (match_types(env, e, g) for [e, g] in _.zip(expected_types, given_types))
         if _.all(namespaces, _.identity)
-          _.freduce namespaces, {}, (acc, namespace) -> _.merge(acc, namespace)
+          acc = {}
+          for namespace in namespaces
+            for k, v of namespace
+              if acc[k] and not match_types(env, acc[k], v)
+                return false
+            _(acc).update(namespace)
+          acc 
         else
           false
     else
