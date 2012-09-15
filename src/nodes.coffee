@@ -88,6 +88,23 @@ class ArrayNode
     {env, type: array_type}
   compile: (env) ->
     "[" + (value.compile(env) for value in @values).join(", ") + "]"
+
+## Ranges
+
+# This should support not only ints by all enumerable types
+class ListRange
+  constructor: (@expression1, @separator, @expression2, @step) ->
+    @inclusive = (@separator == "..")
+  process: (env) ->
+    _.freduce [@expression1, @expression2], {}, (acc, expr) ->
+      type = expr.process(env).type
+      types.match_types(env, new types.Int, type) or 
+        error("TypeError", "Range requires expression of type Int but was: #{type}")
+    klass = env.get_type_class("List")
+    {env, type: new klass([new types.Int])}
+  compile: (env) ->
+    "api.range(Cons, Nil, #{@expression1.compile(env)}, #{@expression2.compile(env)}, " +
+      "#{json(@inclusive)}, #{if @step then @step.compile(env) else json(1)})"
     
 ## Statements
 
@@ -630,6 +647,7 @@ lib.exportClasses(exports, [
   Symbol, SymbolReplacement,
   FunctionCall, FunctionArgument
   Int, Float, String, Tuple, List, ArrayNode
+  ListRange
   TypeDefinition, TypeConstructorDefinition
   Comment
   TraitInterface, TraitInterfaceSymbolBinding, TraitImplementationSymbolBinding,

@@ -15,7 +15,14 @@ merge = (obj, obj2) ->
 
 wrap = (fn) ->
   (args...) -> fn()(args...)
-  
+
+range = (cons, nil, start, end, inclusive, step) ->
+  xs = if inclusive
+    (x for x in [start..end] by step)
+  else
+    (x for x in [start...end] by step)
+  _.reduceRight(xs, ((acc_list, x) -> cons(x, acc_list)), nil)
+    
 match = (matchable, value) ->
   if matchable.kind == "Tuple"
     matches = (match(m, v) for [m, v] in _.zip(matchable.value, value))
@@ -51,3 +58,4 @@ exports.merge = merge
 exports.extend = extend
 exports.wrap = wrap
 exports.match = match
+exports.range = range

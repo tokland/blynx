@@ -215,6 +215,22 @@ grammar =
     o 'BinaryOp'
     o 'IfConditional'
     o 'CaseConditional'
+    o 'ListRange'
+  ]
+  
+  ListRange: [
+    o '[ Expression RangeSeparator Expression OptionalRangeStep ]', 
+        -> new ListRange($2, $3, $4, $5)
+  ]
+  
+  RangeSeparator: [
+    o '..'
+    o '...'
+  ]
+  
+  OptionalRangeStep: [
+    o '', -> null
+    o ', Expression', -> $2
   ]
   
   IfConditional: [

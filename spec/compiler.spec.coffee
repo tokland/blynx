@@ -690,6 +690,29 @@ tests = [
     type List(a) = Nil | Cons(head: a, tail: [a])
     [x, y| tail] = [1, 2]
   """, should_have(symbols: {x: [1, "Int"], y: [2, "Int"]}, bindings: {tail: "[Int]"})]
+  
+  ## Ranges
+  
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: [a])
+    xs = [1..3]
+  """, should_have(bindings: {xs: "[Int]"})]
+
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: [a])
+    xs = [1...3]
+  """, should_have(bindings: {xs: "[Int]"})]
+
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: [a])
+    xs = [1..5, 2]
+  """, should_have(bindings: {xs: "[Int]"})]
+
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: [a])
+    external '-' as ($-): (Int) -> Int
+    xs = [5..1, -2]
+  """, should_have(bindings: {xs: "[Int]"})]
 ]
 
 describe "compiler", ->
