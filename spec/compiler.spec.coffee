@@ -615,6 +615,15 @@ tests = [
   ["""(a, 2) = (1, 3)""",
     should_throw_runtime("RuntimeError: Values do not match: 2 != 3")]
 
+  ["""(a, b) = 1""",
+    should_throw_runtime("TypeError: cannot match tuple pattern with type Int")]
+
+  ["""(a, b, c) = (1, 2)""",
+    should_throw_runtime("TypeError: cannot match tuples of different length: 3 != 2")]
+
+  ["""(a, b, c) = (1, 2, 3, 4)""",
+    should_throw_runtime("TypeError: cannot match tuples of different length: 3 != 4")]
+
   # ADT 
 
   ["""

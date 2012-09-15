@@ -1,7 +1,7 @@
 #!/usr/bin/blynx
 
-# Imagine we have a text file where each line describes a book or magazines 
-# with their title and ISBN codes:
+# Scenario: we have a text file with lines describing a book or magazine 
+# with its title and ISBN code. Example:
 #
 #     $ cat >publications.txt <<EOF 
 #     book | 9781560273332 | Standard AMT Logbook
@@ -9,57 +9,57 @@
 #     magazine | 1748-7188 | Algorithms for molecular biology
 #     EOF
 #
-# The script simply validates these publication codes:
+# The script would validate these publication codes:
 #
 #     $ blynx validate-publications.bl publications.txt
 #     Book 'Standard AMT Logbook' (9781560273332) -- valid
 #     Book 'How to Weld' (9780760331749) -- invalid
 #     Magazine 'Algorithms for molecular biology' (1748-7188) -- valid
 
-export(Publication, isValid)
+export(Publication, valid?)
  
 import fs
+import re
 import sys
-import re(matches)
 
 type Publication traits(Eq) =
   Book(title: String, isbn: String) |
   Magazine(name: String, issn: String)
 
-trait Show Publication
+interface Show of Publication
   str(publication: Publication): String =
     match publication
       Book as book -> "Book <#{book$title}> (#{book$isbn})"
       Magazine as magazine -> "Magazine <#{magazine$name}> (#{magazine$issn})"
 
-isValid(publication: Publication): Bool =
+valid?(publication: Publication): Bool =
   match publication
-    Book(isbn=isbn) -> isbn.isIsbn13Valid
-    Magazine(issn=issn) -> issn.isIssnValid
+    Book(isbn=isbn) -> isbn.isbn13Valid?
+    Magazine(issn=issn) -> issn.issnValid?
 
-isIsbn13Valid(isbn13: String): Bool =
+isbn13Valid?(isbn13: String): Bool =
   # An ISBN-13 has 12 digits and a check digit:
   #
   # x13 = (10 - (x1 + 3*x2 + x3 + 3*x4 + ... + x11 + 3*x12) mod 10) mod 10
-  case isbn13.matches("^\d{13}$")
+  case isbn13.matches?("^\d{13}$")
     False -> False
     True -> 
-      xs = isbn13.chars.map(int)
+      xs = isbn13.map(int)
       factors = [1, 3].cycle(6)
       terms = [x*factor for (x, factor) in xs.slice(0, 12).zip(factors)]
       expected_x12 = (10 - (terms.sum % 10)) % 10
       xs.get(12) == expected_x12
 
-isIssnValid(issn: String): Bool =
+issnValid?(issn: String): Bool =
   # An ISSN number is an eight digit number (divided by a hyphen into 
   # two four-digit numbers), being the last one the check_digit: 
   # 
   # x8 = 11 - ((x1*8 + x2*7 + x3*6 + ... + x7*2) mod 11)
-  case issn.matches("^\d{4}-\d{4}$")
-    False -> False
-    True ->
-      xs = (issn.slice(0, 3).chars ++ issn.slice(5, 7).chars).map(int)
-      terms = [x*idx for (x, idx) in xs.slice(0, 6).zip([8..2,-1])]
+  match issn.capture("^(\d{4})-(\d{4})$")
+    Nothing -> False
+    Just([xs1, xs2]) ->
+      xs = (xs1 ++ xs2).map(int)
+      terms = [x*idx for (x, idx) in xs[0..6].zip([8..2,-1])]
       check_digit = 11 - (terms.sum % 11)
       expected_x7 = match check_digit
         11 -> "0"
@@ -74,12 +74,17 @@ getPublicationsFromFile(path: String): impure [Publication] =
       ["book", isbn13, title] -> Just(Book(title=title, isbn13=isb13))
       ["magazine", issn, name] -> Just(Magazine(name=name, issn=issn))
       other -> Nothing
-  fs@readFileSync(path, "utf8").lines.map(parseLine).compact
+  fs@readFileSync(path).lines.map(parseLine).compact
 
 main() =
-  sys@args.each(path ->
-    getPublicationsFromFile(path).each(publication ->
-      state = if publication.isValid then "valid" else "invalid"
-      print("#{publication} -- #{state}")
-    )
-  )
+  match sys@args
+    [] -> 
+      stderr("validate-publications.bl FILE1 [FILE2 ...]")
+      sys@exit(1)
+    paths -> 
+      paths.each(path ->
+        getPublicationsFromFile(path).each(publication ->
+          state = if publication.valid? then "valid" else "invalid"
+          print("#{publication} -- #{state}")
+        )
+      )

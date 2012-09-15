@@ -87,7 +87,7 @@ class ArrayNode
     array_type = build_enumerable(env, @values, "Array")
     {env, type: array_type}
   compile: (env) ->
-    "[" + (x.compile(env) for x in @values).join(", ") + "]"
+    "[" + (value.compile(env) for value in @values).join(", ") + "]"
     
 ## Statements
 
@@ -100,8 +100,7 @@ check_literal_type = (env, node, type) ->
 class IntMatch extends Int
   get_symbols: -> []
   process_match: (env, type) -> check_literal_type(env, this, type)
-  match_object: (env, type) ->
-    {kind: "Int", value: parseInt(@value_token)}  
+  match_object: (env, type) -> {kind: "Int", value: parseInt(@value_token)}  
 
 class FloatMatch extends Float
   get_symbols: -> []
@@ -135,6 +134,7 @@ class SymbolBinding
           #{@block.compile(env, return: true)}<<
         }).call(this)
       """
+      
 class IdMatch
   constructor: (@name) ->
   process_match: (env, type) -> env.add_binding(@name, type)
@@ -144,6 +144,10 @@ class IdMatch
 class TupleMatch extends Tuple
   get_symbols: -> _.flatten1(value.get_symbols() for value in @values)
   process_match: (env, type) ->
+    if type.name != "Tuple"
+      error("TypeError", "cannot match tuple pattern with type #{type}")
+    if @values.length != type.arity
+      error("TypeError", "cannot match tuples of different length: #{@values.length} != #{type.arity}")
     _.freduce(_.zip(@values, type.get_types()), env, (e, [v, t]) -> v.process_match(e, t))
   match_object: (env) ->
     {kind: "Tuple", value: (value.match_object(env) for value in @values)}

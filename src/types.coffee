@@ -6,6 +6,7 @@ lib = require 'lib'
 class TypeBase
   constructor: (args) ->
     @args = args or []
+    @arity = @args.length
     @name = @constructor.name
   toString: -> @name
   inspect: -> @toString()
