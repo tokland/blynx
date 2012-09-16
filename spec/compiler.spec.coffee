@@ -313,10 +313,9 @@ tests = [
     (/)(x: Int, y: Int): Int = 9
     (%)(x: Int, y: Int): Int = 10
     (&)(x: Int, y: Int): Int = 11
-    (|)(x: Int, y: Int): Int = 12
     
-    (0+0, 0-0, 0^0, 0~0, 0<0, 0>0, 0!0, 0*0, 0/0, 0%0, 0&0, 0|0)
-   """, [1..12]]
+    (0+0, 0-0, 0^0, 0~0, 0<0, 0>0, 0!0, 0*0, 0/0, 0%0, 0&0)
+   """, [1..11]]
 
   ["""
     (++)(x: Int, y: Int): Int = 1
@@ -553,15 +552,20 @@ tests = [
 
   # Lists
   
-  ["""
-    type List(a) = Nil | Cons(head: a, tail: [a])
-    xs = []
-  """, should_have(binding: {xs: '[a]'})]
+#  ["""
+#    type List(a) = Nil | Cons(head: a, tail: [a])
+#    xs = []
+#  """, should_have(bindings: {xs: '[a]'})]
 
   ["""
     type List(a) = Nil | Cons(head: a, tail: [a])
     xs = [1, 2]
-  """, should_have(binding: {xs: '[Int]'})]
+  """, should_have(bindings: {xs: '[Int]'})]
+
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: [a])
+    xs = [1, 2| [3, 4, 5]]
+  """, should_have(bindings: {xs: '[Int]'})]
 
   ["""
     type List(a) = Nil | Cons(head: a, tail: [a])
@@ -570,18 +574,23 @@ tests = [
 
   ["""
     type List(a) = Nil | Cons(head: a, tail: [a])
+    xs = [1, 2| "hello"]
+  """, should_throw("TypeError: Cannot match tail String in [Int]")]
+
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: [a])
     id(xs: [a]): [a] = xs
   """, should_have(bindings: {id: '(xs: [a]) -> [a]'})]
 
   # Arrays
   
-  ["""
-    xs = A[]
-  """, should_have(binding: {xs: 'A[a]'})]
+#  ["""
+#    xs = A[]
+#  """, should_have(bindings: {xs: 'A[a]'})]
 
   ["""
     xs = A[1, 2]
-  """, should_have(binding: {xs: 'A[Int]'})]
+  """, should_have(bindings: {xs: 'A[Int]'})]
 
   ["""
     xs = A[1, 2, "hello"]

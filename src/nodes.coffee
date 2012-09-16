@@ -72,13 +72,20 @@ class Tuple
     "[" + _(@values).invoke("compile", env).join(", ") + "]" 
 
 class List
-  constructor: (@values) ->
+  constructor: (@values, @tail) ->
   process: (env) ->
     list_type = build_enumerable(env, @values, "List")
+    if @tail
+      tail_type = @tail.process(env).type
+      if not types.match_types(env, list_type, tail_type)
+        error("TypeError", "Cannot match tail #{tail_type} in #{list_type}") 
     {env, type: list_type}
   compile: (env) ->
-    _list = (xs) ->
-      if _(xs).isEmpty() then "Nil" else "Cons(#{xs[0].compile(env)}, #{_list(xs[1..-1])})"
+    _list = (xs) =>
+      if _(xs).isEmpty()
+        if @tail then @tail.compile(env) else "Nil"
+      else 
+        "Cons(#{xs[0].compile(env)}, #{_list(xs[1..-1])})"
     _list(@values) 
 
 class ArrayNode

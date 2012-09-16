@@ -123,10 +123,10 @@ grammar =
   ]
 
   ListMatch: [
-    o '[ ExpressionMatchList OptionalTail ]', -> new ListMatch($2, $3)
+    o '[ ExpressionMatchList ListMatchOptionalTail ]', -> new ListMatch($2, $3)
   ]
   
-  OptionalTail: [
+  ListMatchOptionalTail: [
     o '', -> null
     o '| ID', -> $2
   ]
@@ -183,7 +183,7 @@ grammar =
       'SYMBOL_EQUAL', 'SYMBOL_PLUS', 'SYMBOL_MINUS', 'SYMBOL_CIRCUMFLEX'
       'SYMBOL_TILDE', 'SYMBOL_LESS', 'SYMBOL_MORE', 'SYMBOL_EXCLAMATION'
       'SYMBOL_COLON', 'SYMBOL_MUL', 'SYMBOL_DIV', 'SYMBOL_PERCENT'
-      'SYMBOL_AMPERSAND', 'SYMBOL_PIPE', '&', '|', '!'
+      'SYMBOL_AMPERSAND', 'SYMBOL_PIPE', '&', '!'
     ]
   )
 
@@ -300,7 +300,7 @@ grammar =
       'SYMBOL_EQUAL', 'SYMBOL_PLUS', 'SYMBOL_MINUS', 'SYMBOL_CIRCUMFLEX',
       'SYMBOL_TILDE', 'SYMBOL_LESS', 'SYMBOL_MORE', 'SYMBOL_EXCLAMATION',
       '!', 'SYMBOL_COLON', 'SYMBOL_MUL', 'SYMBOL_DIV', 'SYMBOL_PERCENT',
-      'SYMBOL_AMPERSAND', '&', 'SYMBOL_PIPE', '|'
+      'SYMBOL_AMPERSAND', '&', 'SYMBOL_PIPE'
     ]
   
   Literal: [
@@ -308,16 +308,21 @@ grammar =
     o 'FLOAT', -> new Float($1)
     o 'STRING', -> new String($1)
     o 'Tuple', -> new Tuple($1)
-    o 'List', -> new List($1)
-    o 'Array', -> new ArrayNode($1)
+    o 'List'
+    o 'Array'
   ]
   
   List: [
-    o '[ ExpressionList ]', -> $2
+    o '[ ExpressionList ListOptionalTail ]', -> new List($2, $3)
+  ]
+
+  ListOptionalTail: [
+    o '', -> null
+    o '| Expression', -> $2
   ]
 
   Array: [
-    o 'A[ ExpressionList ]', -> $2
+    o 'A[ ExpressionList ]', -> new ArrayNode($2)
   ]
   
   ExpressionList:
@@ -365,7 +370,7 @@ grammar =
 operators = [
   ['nonassoc', 'INDENT', 'DEDENT']
   ["right", "IF", "THEN", "ELSE"],
-  ['left', 'SYMBOL_AMPERSAND', '&', 'SYMBOL_PIPE', '|']
+  ['left', 'SYMBOL_AMPERSAND', '&', 'SYMBOL_PIPE']
   ['left', 'SYMBOL_LESS', 'SYMBOL_MORE']
   ['left', 'SYMBOL_CIRCUMFLEX', 'SYMBOL_TILDE']
   ['left', 'SYMBOL_EQUAL', 'SYMBOL_EXCLAMATION', '!']
