@@ -51,14 +51,15 @@ or(maybe: Maybe(a), default: a): a =
 interface Num of a
   (+), (-), (*), (/): (a, a) -> a
 
-external '+' as int_add: (Int, Int) -> Int
+# Use JSInt and to_int
+external '+' as jsint_add: (JSInt, JSInt) -> JSInt
 external '-' as int_sub: (Int, Int) -> Int
 external '*' as int_mul: (Int, Int) -> Int
 external '/' as int_div: (Int, Int) -> Int
 external '-' as int_negate: (Int) -> Int
 
 implement Num of Int
-  (+) = int_add
+  (+)(x: Int, y: Int): Int = to_int(jsint_add(to_jsint(x), to_jsint(y)))
   (-) = int_sub
   (*) = int_mul
   (/) = int_div

@@ -34,42 +34,42 @@ interface Show of Publication
 
 valid?(publication: Publication): Bool =
   match publication
-    Book(isbn=isbn) -> isbn.validIsbn13?
-    Magazine(issn=issn) -> issn.validIssn?
+    Book(title=title, isbn=isbn) -> title.present? && isbn.validIsbn13?
+    Magazine(name=name, issn=issn) -> name.present? && issn.validIssn?
 
 validIsbn13?(isbn13: String): Bool =
   # An ISBN-13 has 12 digits and a check digit:
   #
   # x13 = (10 - (x1 + 3*x2 + x3 + 3*x4 + ... + x11 + 3*x12) mod 10) mod 10
-  match isbn13.matches?("^\d{13}$")
-    False -> False
-    True -> 
+  match isbn13
+    /^\d{13}$/ -> 
       xs = isbn13.map(int)
       factors = [1, 3].cycle(6)
-      terms = [x*factor for (x, factor) in xs.slice(0, 12).zip(factors)]
-      expected_x12 = (10 - (terms.sum % 10)) % 10
-      xs.get(12) == expected_x12
+      terms = [x*factor for (x, factor) in xs[0...12].zip(factors)]
+      expected_x13 = (10 - (terms.sum % 10)) % 10
+      xs.get(12) == expected_x13
+    _ -> False
 
 validIssn?(issn: String): Bool =
   # An ISSN number is an eight digit number (divided by a hyphen into 
   # two four-digit numbers), being the last one the check_digit: 
   # 
   # x8 = 11 - ((x1*8 + x2*7 + x3*6 + ... + x7*2) mod 11)
-  match issn.capture("^(\d{4})-(\d{4})$")
-    Nothing -> False
-    Just([xs1, xs2]) ->
+  match issn
+    /^(\d{4})-(\d{4})$/ captures [xs1, xs2] ->
       xs = (xs1 ++ xs2).map(int)
       terms = [x*idx for (x, idx) in xs[0..6].zip([8..2,-1])]
       check_digit = 11 - (terms.sum % 11)
-      expected_x7 = match check_digit
+      expected_x8 = match check_digit
         11 -> "0"
         10 -> "X"
         other -> other.str
-      issn.get(8) == expected_x7
+      issn.get(7) == expected_x8
+    _ -> False
 
-getPublicationsFromFile(path: String): impure [Publication] =
+getPublicationsFromFile(path: FilePath): impure [Publication] =
   parseLine(line: String): Maybe(Publication) =
-    fields = line.split("|").map(strip)
+    fields = line.split("|", 3).map(strip)
     match fields
       ["book", isbn13, title] -> Just(Book(title=title, isbn13=isb13))
       ["magazine", issn, name] -> Just(Magazine(name=name, issn=issn))
@@ -78,7 +78,7 @@ getPublicationsFromFile(path: String): impure [Publication] =
 
 main() =
   match sys@args
-    [] -> 
+    [] ->
       stderr("validate-publications.bl FILE1 [FILE2 ...]")
       sys@exit(1)
     paths -> 

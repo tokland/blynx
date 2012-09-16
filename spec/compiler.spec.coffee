@@ -163,6 +163,16 @@ tests = [
     f(1, z=3, y=2)
    """, 3]
 
+  # Recursion
+  
+  ["""
+    type Bool = True | False
+    recursive(x: Bool): Int = 
+      if x then 1 else recursive(True)
+    x = recursive(False)
+  """,
+    should_have(symbols: {x: [1, "Int"]})]
+     
   # OOP-style calls
   
   ["""

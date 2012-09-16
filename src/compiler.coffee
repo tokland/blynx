@@ -32,7 +32,11 @@ exports.getAST = getAST = (source, options = {}) ->
   parser.parse(tokens)
 
 exports.compile = compile = (source, options = {}) ->
-  env = _(["Int", "Float", "String", "Array"]).freduce new environment.Environment, (e, name) ->
+  builtin_types = [
+    "JSString", "JSNumber", "JSBool", "JSObject", "JSArray"
+    "Int", "Float", "String", "Array",
+  ]
+  env = _(builtin_types).freduce new environment.Environment, (e, name) ->
     e.add_type(name, types[name], [])
   {env: final_env, output} = getAST(source, options).compile_with_process(env)
   process.stderr.write(final_env.inspect()+"\n") if options.debug

@@ -36,6 +36,12 @@ class Float extends TypeBase
 
 class String extends TypeBase
 
+class JSString extends TypeBase
+class JSNumber extends TypeBase
+class JSBool extends TypeBase
+class JSObject extends TypeBase
+class JSArray extends TypeBase
+
 class Array extends TypeBase
   arity: 1
   toString: -> "A[#{@args[0].toString()}]"
@@ -134,5 +140,8 @@ exports.match_types = match_types = (env, expected, given) ->
 
 ##
 
-lib.exportClasses(exports,
-  [Int, Float, String, Array, Tuple, NamedTuple, Function, Variable])
+lib.exportClasses(exports, [
+  JSString, JSNumber, JSBool, JSObject, JSArray
+  Int, Float, String, Array, Tuple, NamedTuple, Function, Variable
+])
+

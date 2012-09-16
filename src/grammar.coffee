@@ -364,6 +364,7 @@ grammar =
   
 operators = [
   ['nonassoc', 'INDENT', 'DEDENT']
+  ["right", "IF", "THEN", "ELSE"],
   ['left', 'SYMBOL_AMPERSAND', '&', 'SYMBOL_PIPE', '|']
   ['left', 'SYMBOL_LESS', 'SYMBOL_MORE']
   ['left', 'SYMBOL_CIRCUMFLEX', 'SYMBOL_TILDE']
@@ -371,7 +372,6 @@ operators = [
   ['right', 'SYMBOL_COLON']
   ['left', 'SYMBOL_PLUS', 'SYMBOL_MINUS']
   ['left', 'SYMBOL_MUL', 'SYMBOL_DIV', 'SYMBOL_PERCENT']
-  ["right", "IF", "THEN", "ELSE"],
   ['right', 'UNARY']
   ['left', '.']
 ]

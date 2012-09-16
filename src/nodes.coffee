@@ -125,11 +125,12 @@ class Match
       (function() {>>
         var _match, _match_expression = <%= @expression %>;
         <% for match_pair, index in @match_pairs: %>
+          <% match_env = match_pair.left.process_match(@env, @expr_type) %>
           <%= if index == 0 then "if" else "else if" %> (_match = api.match(<%= @json(match_pair.left.match_object(@env)) %>, _match_expression, {return_value: true})) {>>
             <% for name in match_pair.left.get_symbols(): %>
               var <%= name %> = _match.<%= name %>;
             <% end %>
-            <%= match_pair.right.compile(@env, return: true) %><<
+            <%= match_pair.right.compile(match_env, return: true) %><<
           }
         <% end %>
         else {>>
@@ -141,6 +142,7 @@ class Match
       env: env
       match_pairs: @match_pairs
       expression: @expression.compile(env)
+      expr_type: @expression.process(env).type
 
 class MatchPair
   constructor: (@left, @right) ->
@@ -277,9 +279,10 @@ class FunctionBinding
         error_msg: "argument '#{arg.name}' already defined in function binding")
   process: (env) ->
     restrictions = ([res.typevar.name, res.trait] for res in @restrictions)
-    block_env = @get_block_env(env, restrictions)
-    block_type = @block.process(block_env).type
     result_type = @result_type.process(env, restrictions: restrictions).type
+    block_env = @get_block_env(env, restrictions).
+      add_function_binding(@name, @args, result_type, restrictions: restrictions).env
+    block_type = @block.process(block_env).type
     unless namespace = types.match_types(env, block_type, result_type)
       msg = "function '#{@name}' should return '#{result_type}' but returns '#{block_type}'"
       error("TypeError", msg)

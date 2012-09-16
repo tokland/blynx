@@ -73,9 +73,13 @@ _match = (matchable, value) ->
   else
     error("InternalError", "Matchable kind '#{matchable.kind}' not implemented")
   
+to_bool = (js_bool, bool_true, bool_false) ->
+  if js_bool then bool_true else bool_false
+  
 exports.merge = merge
 exports.extend = extend
 exports.wrap = wrap
 exports.match = match
 exports.range = range
 exports.runtime_error = runtime_error
+exports.to_bool = to_bool
