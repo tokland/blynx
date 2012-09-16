@@ -34,14 +34,14 @@ interface Show of Publication
 
 valid?(publication: Publication): Bool =
   match publication
-    Book(isbn=isbn) -> isbn.isbn13Valid?
-    Magazine(issn=issn) -> issn.issnValid?
+    Book(isbn=isbn) -> isbn.validIsbn13?
+    Magazine(issn=issn) -> issn.validIssn?
 
-isbn13Valid?(isbn13: String): Bool =
+validIsbn13?(isbn13: String): Bool =
   # An ISBN-13 has 12 digits and a check digit:
   #
   # x13 = (10 - (x1 + 3*x2 + x3 + 3*x4 + ... + x11 + 3*x12) mod 10) mod 10
-  case isbn13.matches?("^\d{13}$")
+  match isbn13.matches?("^\d{13}$")
     False -> False
     True -> 
       xs = isbn13.map(int)
@@ -50,7 +50,7 @@ isbn13Valid?(isbn13: String): Bool =
       expected_x12 = (10 - (terms.sum % 10)) % 10
       xs.get(12) == expected_x12
 
-issnValid?(issn: String): Bool =
+validIssn?(issn: String): Bool =
   # An ISSN number is an eight digit number (divided by a hyphen into 
   # two four-digit numbers), being the last one the check_digit: 
   # 

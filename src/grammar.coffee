@@ -215,9 +215,23 @@ grammar =
     o 'BinaryOp'
     o 'IfConditional'
     o 'CaseConditional'
+    o 'Match'
     o 'ListRange'
   ]
   
+  Match: [
+    o 'MATCH Expression INDENT MatchPairList DEDENT', -> new Match($2, $4)
+  ]
+  
+  MatchPairList: [
+    o "MatchPair TERMINATOR", -> [$1]
+    o "MatchPairList MatchPair TERMINATOR", -> $1.concat($2)
+  ]
+  
+  MatchPair: [
+    o 'ExpressionMatch -> BlockOrExpression', -> new MatchPair($1, $3)
+  ]
+    
   ListRange: [
     o '[ Expression RangeSeparator Expression OptionalRangeStep ]', 
         -> new ListRange($2, $3, $4, $5)

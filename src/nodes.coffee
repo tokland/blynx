@@ -105,6 +105,45 @@ class ListRange
   compile: (env) ->
     "api.range(Cons, Nil, #{@expression1.compile(env)}, #{@expression2.compile(env)}, " +
       "#{json(@inclusive)}, #{if @step then @step.compile(env) else json(1)})"
+
+## Match
+
+class Match
+  constructor: (@expression, @match_pairs) ->
+  process: (env) ->
+    expr_type = @expression.process(env).type
+    match_env = _.first(@match_pairs).left.process_match(env, expr_type)
+    right_type0 = _.first(@match_pairs).right.process(match_env).type
+    for match_pair in @match_pairs
+      match_env = match_pair.left.process_match(env, expr_type)
+      right_type = match_pair.right.process(match_env).type
+      if not types.match_types(env, right_type0, right_type)
+        error("TypeError", "Cannot match result branch of match: #{right_type0} != #{right_type}")
+    {env, type: right_type0}
+  compile: (env) ->
+    render """
+      (function() {>>
+        var _match, _match_expression = <%= @expression %>;
+        <% for match_pair, index in @match_pairs: %>
+          <%= if index == 0 then "if" else "else if" %> (_match = api.match(<%= @json(match_pair.left.match_object(@env)) %>, _match_expression, {return_value: true})) {>>
+            <% for name in match_pair.left.get_symbols(): %>
+              var <%= name %> = _match.<%= name %>;
+            <% end %>
+            <%= match_pair.right.compile(@env, return: true) %><<
+          }
+        <% end %>
+        else {>>
+          api.runtime_error("No pattern matched the expression");<<
+        }
+        <<
+      }).call()
+    """,
+      env: env
+      match_pairs: @match_pairs
+      expression: @expression.compile(env)
+
+class MatchPair
+  constructor: (@left, @right) ->
     
 ## Statements
 
@@ -648,6 +687,7 @@ lib.exportClasses(exports, [
   FunctionCall, FunctionArgument
   Int, Float, String, Tuple, List, ArrayNode
   ListRange
+  Match, MatchPair
   TypeDefinition, TypeConstructorDefinition
   Comment
   TraitInterface, TraitInterfaceSymbolBinding, TraitImplementationSymbolBinding,

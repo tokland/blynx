@@ -613,7 +613,7 @@ tests = [
     should_throw(/TypeError: Cannot match types in pattern/)]
     
   ["""(a, 2) = (1, 3)""",
-    should_throw_runtime("RuntimeError: Values do not match: 2 != 3")]
+    should_throw_runtime("RuntimeError: Cannot match values: 2 != 3")]
 
   ["""(a, b) = 1""",
     should_throw_runtime("TypeError: cannot match tuple pattern with type Int")]
@@ -650,7 +650,7 @@ tests = [
   ["""
     type Either(a, b) = Left(value: a) | Right(value: b)
     Left(value=x) = Right(5)
-   """, should_throw_runtime("RuntimeError: Values do not match: Left != Right")] 
+   """, should_throw_runtime("RuntimeError: Cannot match constructors: Left != Right")] 
 
   ["""
     type Either(a, b) = Left(value: a) | Right(value: b)
@@ -713,6 +713,37 @@ tests = [
     external '-' as ($-): (Int) -> Int
     xs = [5..1, -2]
   """, should_have(bindings: {xs: "[Int]"})]
+  
+  ## Match block
+
+  ["""
+    out = match (1, 2)
+      (x, 3) -> 0
+      (x, 2) -> x
+      _ -> 2
+   """,
+    should_have(symbols: {out: [1, "Int"]})] 
+
+  ["""
+    out = match (1, 10)
+      (x, 1) -> 1
+      (x, "hello") -> 2
+   """,
+    should_throw("TypeError: Cannot match types in pattern: Int != String")] 
+
+  ["""
+    out = match (1, 10)
+      (x, 1) -> 1
+      (x, 2) -> "hello"
+   """,
+    should_throw("TypeError: Cannot match result branch of match: Int != String")] 
+
+  ["""
+    out = match (1, 10)
+      (x, 1) -> 1
+      (x, 2) -> 2
+   """,
+    should_throw_runtime("RuntimeError: No pattern matched the expression")] 
 ]
 
 describe "compiler", ->
