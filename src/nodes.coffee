@@ -193,8 +193,10 @@ class SymbolBinding
       
 class IdMatch
   constructor: (@name) ->
-  process_match: (env, type) -> env.add_binding(@name, type)
-  get_symbols: -> [@name]
+  process_match: (env, type) ->
+    if @name == "_" then env else env.add_binding(@name, type)
+  get_symbols: -> 
+    if @name == "_" then [] else [@name]
   match_object: (env) -> {kind: "symbol", name: jsname(@name)}
 
 class TupleMatch extends Tuple

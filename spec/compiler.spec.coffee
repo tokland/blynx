@@ -582,6 +582,13 @@ tests = [
   """, should_have(bindings: {id: '(xs: A[a]) -> A[a]'})]
   
   ## Matching
+
+  # Placeholders
+  
+  ["""
+    (x, 1, _, _) = (0, 1, 2, 3)
+   """,
+    should_have(symbols: {x: [0, "Int"]})] 
   
   # Literals
   
