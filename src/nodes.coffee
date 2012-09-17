@@ -255,6 +255,17 @@ class ListMatch
       expr.process_match(env_acc, inner_type))
     if @tail then new_env.add_binding(@tail, type) else new_env
 
+class ArrayMatch
+  constructor: (@expressions) ->
+  get_symbols: -> 
+    _.flatten1(expr.get_symbols() for expr in @expressions)
+  match_object: (env) ->
+    {kind: "array", values: (expr.match_object(env) for expr in @expressions)}
+  process_match: (env, type) ->
+    inner_type = type.get_types()[0]
+    _.freduce @expressions, env, ((env_acc, expr) -> 
+      expr.process_match(env_acc, inner_type))
+
 class TraitInterfaceSymbolBinding extends SymbolBinding
   after_transform: ->
     lib.getClass(@left) == IdMatch or
@@ -691,7 +702,8 @@ exports.transformTo = (classname, instance) ->
 lib.exportClasses(exports, [
   Root
   SymbolBinding, FunctionBinding, Restriction
-  IntMatch, FloatMatch, StringMatch, IdMatch, TupleMatch, AdtArgumentMatch, AdtMatch, ListMatch
+  IdMatch
+  IntMatch, FloatMatch, StringMatch, TupleMatch, AdtArgumentMatch, AdtMatch, ListMatch, ArrayMatch
   TypedArgument, Type, TypeVariable, 
   TupleType, FunctionType, ListType, ArrayType
   Expression, ParenExpression, Block, StatementExpression

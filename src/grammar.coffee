@@ -120,6 +120,7 @@ grammar =
     o 'STRING', -> new StringMatch($1)
     o 'AdtMatch'
     o 'ListMatch'
+    o 'ArrayMatch'
   ]
 
   ListMatch: [
@@ -129,6 +130,10 @@ grammar =
   ListMatchOptionalTail: [
     o '', -> null
     o '| ID', -> $2
+  ]
+
+  ArrayMatch: [
+    o 'A[ ExpressionMatchList ]', -> new ArrayMatch($2)
   ]
   
   AdtMatch: [

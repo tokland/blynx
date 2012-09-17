@@ -33,7 +33,10 @@ match = (matchable, value, options = {}) ->
     try
       _match(matchable, value)
     catch error
-      false
+      if error.message.match(/RuntimeError/)
+        false
+      else
+        throw new Error(error.message)
   else
     _match(matchable, value)
   
@@ -53,6 +56,12 @@ _match = (matchable, value) ->
       match_error("Cannot match constructors: #{matchable.name} != #{value._name}")
     else 
       matches = (_match(arg.value, value[arg.name]) for arg in matchable.args)
+      _.freduce(matches, {}, _.merge)
+  else if matchable.kind == "array"
+    if matchable.values.length != value.length
+      match_error("Cannot match array: sizes do not match")
+    else
+      matches = (_match(m, v) for [m, v] in _.zip(matchable.values, value))
       _.freduce(matches, {}, _.merge)
   else if matchable.kind == "list"
     start = {result: {}, list: value}

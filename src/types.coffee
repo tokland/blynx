@@ -45,7 +45,7 @@ class JSArray extends TypeBase
 class Array extends TypeBase
   arity: 1
   toString: -> "A[#{@args[0].toString()}]"
-  get_types: -> @args[0]
+  get_types: -> @args
 
 ## Tuple 
 

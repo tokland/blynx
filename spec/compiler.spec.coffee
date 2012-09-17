@@ -716,7 +716,27 @@ tests = [
     type List(a) = Nil | Cons(head: a, tail: [a])
     [x, y| tail] = [1, 2]
   """, should_have(symbols: {x: [1, "Int"], y: [2, "Int"]}, bindings: {tail: "[Int]"})]
+
+  # Array
   
+  ["""
+    A[] = A[]
+    A[1] = A[1]
+    A[1, 2] = A[1, 2]
+  """, should_not_throw_runtime()]
+
+  ["""
+    A[x, y] = A[]
+  """, should_throw_runtime("RuntimeError: Cannot match array: sizes do not match")]
+
+  ["""
+    A[x, y] = A[1, 2, 3]
+  """, should_throw_runtime("RuntimeError: Cannot match array: sizes do not match")]
+
+  ["""
+    A[x, y] = A[1, 2]
+  """, should_have(symbols: {x: [1, "Int"], y: [2, "Int"]})]
+
   ## Ranges
   
   ["""
