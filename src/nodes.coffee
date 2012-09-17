@@ -117,13 +117,16 @@ class ListRange
 
 class Match
   constructor: (@expression, @match_pairs) ->
+  _left_env: (env, match_pair, expr_type) -> 
+    match_env = match_pair.left.process_match(env, expr_type)
+    if match_pair.as then match_env.add_binding(match_pair.as, expr_type) else match_env
   process: (env) ->
     expr_type = @expression.process(env).type
     match_env = _.first(@match_pairs).left.process_match(env, expr_type)
     right_type0 = _.first(@match_pairs).right.process(match_env).type
     for match_pair in @match_pairs
-      match_env = match_pair.left.process_match(env, expr_type)
-      right_type = match_pair.right.process(match_env).type
+      left_env = @_left_env(env, match_pair, expr_type)    
+      right_type = match_pair.right.process(left_env).type
       if not types.match_types(env, right_type0, right_type)
         error("TypeError", "Cannot match result branch of match: #{right_type0} != #{right_type}")
     {env, type: right_type0}
@@ -132,12 +135,12 @@ class Match
       (function() {>>
         var _match, _match_expression = <%= @expression %>;
         <% for match_pair, index in @match_pairs: %>
-          <% match_env = match_pair.left.process_match(@env, @expr_type) %>
-          <%= if index == 0 then "if" else "else if" %> (_match = api.match(<%= @json(match_pair.left.match_object(@env)) %>, _match_expression, {return_value: true})) {>>
-            <% for name in match_pair.left.get_symbols(): %>
+          <% left_env = @get_left_env(@env, match_pair, @expr_type) %>
+          <%= if index == 0 then "if" else "else if" %> (_match = api.match(<%= @json(match_pair.left.match_object(@env)) %>, _match_expression, {return_value: true, as: <%= @json(match_pair.as) %>})) {>>
+            <% for name in match_pair.get_symbols(): %>
               var <%= name %> = _match.<%= name %>;
             <% end %>
-            <%= match_pair.right.compile(match_env, return: true) %><<
+            <%= match_pair.right.compile(left_env, return: true) %><<
           }
         <% end %>
         else {>>
@@ -150,9 +153,11 @@ class Match
       match_pairs: @match_pairs
       expression: @expression.compile(env)
       expr_type: @expression.process(env).type
+      get_left_env: @_left_env
 
 class MatchPair
-  constructor: (@left, @right) ->
+  constructor: (@left, @right, @as) ->
+  get_symbols: -> @left.get_symbols().concat(if @as then [@as] else [])
     
 ## Statements
 

@@ -234,7 +234,12 @@ grammar =
   ]
   
   MatchPair: [
-    o 'ExpressionMatch -> BlockOrExpression', -> new MatchPair($1, $3)
+    o 'ExpressionMatch OptionalAsMatch -> BlockOrExpression', -> new MatchPair($1, $4, $2)
+  ]
+  
+  OptionalAsMatch: [
+    o '', -> null
+    o 'AS ID', -> $2
   ]
     
   ListRange: [

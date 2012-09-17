@@ -771,6 +771,14 @@ tests = [
     should_have(symbols: {out: [1, "Int"]})] 
 
   ["""
+    out = match (1, 2)
+      (x, 3) -> (0, (0, 0))
+      (x, 2) as xs -> (x, xs)
+      _ -> (2, (2, 2))
+   """,
+    should_have(symbols: {out: [[1, [1, 2]], "(Int, (Int, Int))"]})] 
+
+  ["""
     out = match (1, 10)
       (x, 1) -> 1
       (x, "hello") -> 2

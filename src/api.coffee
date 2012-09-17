@@ -31,7 +31,8 @@ match_error = runtime_error
 match = (matchable, value, options = {}) ->
   if options.return_value
     try
-      _match(matchable, value)
+      result = _match(matchable, value)
+      if options.as then _.merge(result, _.mash([[options.as, value]])) else result
     catch error
       if error.message.match(/RuntimeError/)
         false
