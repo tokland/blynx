@@ -590,6 +590,20 @@ tests = [
     xs = [2*x for x in [1, 2, 3]]
   """, should_have(bindings: {xs: '[Int]'})]
 
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: [a])
+    external '*' as (*): (Int, Int) -> Int
+    xs = [x*y for (x, y) in [(1, 2), (3, 4)]]
+  """, should_have(bindings: {xs: '[Int]'})]
+
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: [a])
+    type Bool = True | False
+    external '*' as (*): (Int, Int) -> Int
+    external '<' as (<): (Int, Int) -> Bool
+    xs = [x*y for (x, y) in [(1, 2), (4, 3), (2, 3)] if x < y]
+  """, should_have(bindings: {xs: '[Int]'})]
+
   # Arrays
   
 #  ["""

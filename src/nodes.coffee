@@ -103,7 +103,7 @@ list_inner_type = (list_type) ->
   list_type.get_types()[0]
     
 class ListComprehension
-  constructor: (@result_expression, @match, @iterable_expression) ->
+  constructor: (@result_expression, @match, @iterable_expression, @condition) ->
   _get_match_env: (env) ->
     expr_type = @iterable_expression.process(env).type
     @match.process_match(env, list_inner_type(expr_type))
@@ -113,26 +113,17 @@ class ListComprehension
     klass = env.get_type_class("List")
     {env, type: new klass([inner_type])}
   compile: (env) ->
-    render """
-      (function() {>>
-        var _result = [], _result_list = Nil, _i;
-        var _iterable = <%= @iterable_expression %>;
-        while (_iterable != Nil) {>>
-          <%= @compile_match(@env, @match, '_iterable.head') %>
-          _result.push(<%= @result_expression.compile(@env) %>);<<
-          _iterable = _iterable.tail;
-        }
-        for (_i=_result.length-1; _i>=0; _i--) {
-          _result_list = Cons(_result[_i], _result_list);
-        }
-        return _result_list;<<
-      }).call()
-    """,
-      env: @_get_match_env(env)
-      result_expression: @result_expression
-      match: @match
-      iterable_expression: @iterable_expression.compile(env)
-      compile_match: compile_match
+    match_env = @_get_match_env(env)
+    return_compiled = if @condition
+      "#{@condition.compile(match_env)} ? #{@result_expression.compile(match_env)} : null"
+    else
+      @result_expression.compile(match_env)
+    """
+      api.list_comprehension(Nil, Cons, #{@iterable_expression.compile(env)}, function(_head) {>>
+        #{compile_match(match_env, @match, '_head')}
+        return #{return_compiled};<<
+      })
+    """
       
 
 ## Ranges

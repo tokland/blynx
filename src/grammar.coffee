@@ -229,8 +229,13 @@ grammar =
   ]
   
   ListComprehension: [
-    o '[ Expression FOR ExpressionMatch IN Expression ]',
-        -> new ListComprehension($2, $4, $6) 
+    o '[ Expression FOR ExpressionMatch IN Expression OptionalComprehensionIf ]',
+        -> new ListComprehension($2, $4, $6, $7) 
+  ]
+  
+  OptionalComprehensionIf: [
+    o '', -> null
+    o 'IF Expression', -> $2
   ]
   
   Match: [
