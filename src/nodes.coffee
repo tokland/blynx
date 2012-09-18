@@ -230,19 +230,26 @@ class AdtArgumentMatch
 class AdtMatch
   constructor: (@name, @args) ->
   get_symbols: -> _.flatten1(arg.value.get_symbols() for arg in @args)
+  _get_args_and_result: (env) ->
+    constructor_type = env.get_binding(@name)
+    [args, result] = if constructor_type.name == "Function" 
+      [constructor_type.args, constructor_type.result]
+    else 
+      [new types.NamedTuple([]), constructor_type]
   match_object: (env) ->
-    names = env.get_binding(@name).args.get_keys()[0...@args.length]
+    [args, result] = @_get_args_and_result(env)
+    names = args.get_keys()[0...@args.length]
     args = for [arg, name] in _.zip(@args, names)
       {name: arg.name or name, value: arg.value.match_object(env)}
     {kind: "adt", name: @name, args: args}
   process_match: (env, type) ->
-    function_type = env.get_binding(@name)
-    namespace = types.match_types(env, function_type.result, type) or
-      error("TypeError", "Cannot match types in pattern: #{function_type.result} != #{type}")
-    arg_types = function_type.args.get_types()[0...@args.length]
+    [args, result] = @_get_args_and_result(env)
+    namespace = types.match_types(env, result, type) or
+      error("TypeError", "Cannot match types in pattern: #{result} != #{type}")
+    arg_types = args.get_types()[0...@args.length]
     _.freduce _.zip(@args, arg_types), env, (env_acc, [arg, arg_type]) ->
       arg_type = if arg.name
-        function_type.args.join(namespace).get_type(arg.name) or
+        args.join(namespace).get_type(arg.name) or
           error("ArgumentError", "Argument not found: #{arg.name}")
       else
         arg_type.join(namespace)

@@ -653,6 +653,12 @@ tests = [
   # ADT 
 
   ["""
+    type Bool = True | False
+    True = True
+    False = False
+   """, should_not_throw_runtime()] 
+
+  ["""
     type Either(a, b) = Left(value: a) | Right(value: b)
     Right(x) = Right(5)
    """, should_have(symbols: {x: [5, "Int"]})] 

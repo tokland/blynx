@@ -142,7 +142,7 @@ grammar =
   
   AdtArgumentListOptional: [
     o '( AdtArgumentMatchList )', -> $2
-    o ''
+    o '', -> []
   ]
     
   AdtArgumentMatchList:

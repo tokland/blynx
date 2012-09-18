@@ -73,7 +73,7 @@ getPublicationsFromFile(path: FilePath): impure [Publication] =
     match fields
       ["book", isbn13, title] -> Just(Book(title=title, isbn13=isb13))
       ["magazine", issn, name] -> Just(Magazine(name=name, issn=issn))
-      other -> Nothing
+      _ -> Nothing
   fs@readFileSync(path).lines.map(parseLine).compact
 
 main() =
