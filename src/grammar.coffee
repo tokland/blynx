@@ -210,18 +210,27 @@ grammar =
   
   InnerExpression: [
     o 'Symbol', -> new SymbolReplacement($1)
-    o 'Symbol . Symbol FunctionArgumentListOptional', -> new FunctionCall($3, [$1].concat($4))
+    o 'Symbol . Symbol FunctionArgumentListOptional', 
+        -> new FunctionCall($3, [$1].concat($4))
     o 'Value'
     o 'Value ( FunctionArgumentList )', -> new FunctionCall($1, $3)
-    o 'Value . Symbol FunctionArgumentListOptional', -> new FunctionCall($3, [$1].concat($4))
+    o 'Value . Symbol FunctionArgumentListOptional', 
+        -> new FunctionCall($3, [$1].concat($4))
     o 'Literal'
-    o 'Literal . Symbol FunctionArgumentListOptional', -> new FunctionCall($3, [$1].concat($4))
+    o 'Literal . Symbol FunctionArgumentListOptional', 
+        -> new FunctionCall($3, [$1].concat($4))
     o 'UnaryOp'
     o 'BinaryOp'
     o 'IfConditional'
     o 'CaseConditional'
     o 'Match'
+    o 'ListComprehension'
     o 'ListRange'
+  ]
+  
+  ListComprehension: [
+    o '[ Expression FOR ExpressionMatch IN Expression ]',
+        -> new ListComprehension($2, $4, $6) 
   ]
   
   Match: [

@@ -176,6 +176,10 @@ tests = [
   # Array
   
   ["A[1, 2]", "A[ [INTEGER 1] , [INTEGER 2] ]"]
+  
+  # Comprehensions
+  
+  ["[x for x in [1, 2]]", "[ [ID x] [FOR for] [ID x] [IN in] [ [INTEGER 1] , [INTEGER 2] ] ]"]
 ]
 
 tokens = (args...) ->

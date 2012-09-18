@@ -33,7 +33,7 @@ build_enumerable = (env, values, type_class) ->
   klass = env.get_type_class(type_class)
   new klass([inner_type])
 
-native_binary_operators = "+ - * / % < <= == > >= || &&".split(" ")
+native_binary_operators = "+ - * / % < <= == === > >= || &&".split(" ")
 native_unary_operators = "+ - !".split(" ")
 native_symbols = {"True": true, "False": false}
    
@@ -96,6 +96,44 @@ class ArrayNode
     {env, type: array_type}
   compile: (env) ->
     "[" + (value.compile(env) for value in @values).join(", ") + "]"
+
+list_inner_type = (list_type) ->
+  if list_type.name != "List"
+    error("TypeError", "Expected list type: #{list_type}")
+  list_type.get_types()[0]
+    
+class ListComprehension
+  constructor: (@result_expression, @match, @iterable_expression) ->
+  _get_match_env: (env) ->
+    expr_type = @iterable_expression.process(env).type
+    @match.process_match(env, list_inner_type(expr_type))
+  process: (env) ->
+    match_env = @_get_match_env(env) 
+    inner_type = @result_expression.process(match_env).type
+    klass = env.get_type_class("List")
+    {env, type: new klass([inner_type])}
+  compile: (env) ->
+    render """
+      (function() {>>
+        var _result = [], _result_list = Nil, _i;
+        var _iterable = <%= @iterable_expression %>;
+        while (_iterable != Nil) {>>
+          <%= @compile_match(@env, @match, '_iterable.head') %>
+          _result.push(<%= @result_expression.compile(@env) %>);<<
+          _iterable = _iterable.tail;
+        }
+        for (_i=_result.length-1; _i>=0; _i--) {
+          _result_list = Cons(_result[_i], _result_list);
+        }
+        return _result_list;<<
+      }).call()
+    """,
+      env: @_get_match_env(env)
+      result_expression: @result_expression
+      match: @match
+      iterable_expression: @iterable_expression.compile(env)
+      compile_match: compile_match
+      
 
 ## Ranges
 
@@ -183,19 +221,22 @@ class StringMatch extends String
   process_match: (env, type) -> check_literal_type(env, this, type)
   match_object: (env) -> {kind: "String", value: @value_token}
 
+compile_match = (env, left_node, right_value) ->
+  if lib.getClass(left_node) == IdMatch
+    "var #{jsname(left_node.name)} = #{right_value};"
+  else
+    symbols = (jsname(s) for s in left_node.get_symbols())
+    "var _match = api.match(#{json(left_node.match_object(env))}, #{right_value});\n" +
+      (if _(symbols).isNotEmpty() then \
+        "var #{(("#{name} = _match.#{name}") for name in symbols).join(', ')};" else "") 
+
 class SymbolBinding
   constructor: (@left, @block) ->
   process: (env) ->
     type = @block.process(env).type
     {env: @left.process_match(env, type), type: @block.process(env).type}
   compile: (env) ->
-    if lib.getClass(@left) == IdMatch
-      "var #{jsname(@left.name)} = #{@compile_value(env)};"
-    else
-      symbols = (jsname(s) for s in @left.get_symbols())
-      "var _match = api.match(#{json(@left.match_object(env))}, #{@compile_value(env)});\n" +
-        (if _(symbols).isNotEmpty() then \
-          "var #{(("#{name} = _match.#{name}") for name in symbols).join(', ')};" else "") 
+    compile_match(env, @left, @compile_value(env)) 
   compile_value: (env) ->
     if lib.getClass(@block) == Expression
       @block.compile(env)
@@ -727,6 +768,7 @@ lib.exportClasses(exports, [
   Symbol, SymbolReplacement,
   FunctionCall, FunctionArgument
   Int, Float, String, Tuple, List, ArrayNode
+  ListComprehension
   ListRange
   Match, MatchPair
   TypeDefinition, TypeConstructorDefinition

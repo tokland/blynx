@@ -28,6 +28,8 @@ class Environment
       msg = options.error_msg or 
         "symbol '#{name}' already bound to type '#{@bindings[name]}'"  
       error("BindingError", msg)
+    if not type
+      error("InternalError", "Tried to set '#{name}' to empty type")
     new_bindings = _.merge(@bindings, _.mash([[name, type]]))
     @clone(bindings: new_bindings)
   get_binding: (name) ->
