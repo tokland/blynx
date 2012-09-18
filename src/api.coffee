@@ -45,7 +45,7 @@ _match = (matchable, value) ->
   if matchable.kind == "Tuple"
     matches = (_match(m, v) for [m, v] in _.zip(matchable.value, value))
     _.freduce(matches, {}, _.merge)
-  else if matchable.kind in ["Int", "Float", "String"]
+  else if matchable.kind in ["Int", "Float", "String", "native"]
     if matchable.value != value
       match_error("Cannot match values: #{matchable.value} != #{value}")
     else

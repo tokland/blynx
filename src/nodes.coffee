@@ -35,6 +35,7 @@ build_enumerable = (env, values, type_class) ->
 
 native_binary_operators = "+ - * / % < <= == > >= || &&".split(" ")
 native_unary_operators = "+ - !".split(" ")
+native_symbols = {"True": true, "False": false}
    
 ##
   
@@ -241,7 +242,10 @@ class AdtMatch
     names = args.get_keys()[0...@args.length]
     args = for [arg, name] in _.zip(@args, names)
       {name: arg.name or name, value: arg.value.match_object(env)}
-    {kind: "adt", name: @name, args: args}
+    if @name not of native_symbols
+      {kind: "adt", name: @name, args: args}
+    else
+      {kind: "native", value: native_symbols[@name]}
   process_match: (env, type) ->
     [args, result] = @_get_args_and_result(env)
     namespace = types.match_types(env, result, type) or
@@ -431,7 +435,8 @@ class SymbolReplacement
   process: (env) -> 
     {env, type: env.get_binding(@symbol.name)}
   compile: (env) ->
-    name = jsname(@symbol.name)
+    name = if @symbol.name of native_symbols then native_symbols[@symbol.name] \ 
+           else jsname(@symbol.name)
     if env.is_trait_symbol(@symbol.name) then "#{name}[type]" else name
 
 class FunctionArgument
@@ -667,7 +672,7 @@ class IfConditional
       error("TypeError", "Types in branches should match: #{type1} <-> #{type2}")
     {env, type: type1}
   compile: (env) ->
-    "((#{@condition.compile(env)} === True) ? #{@value_true.compile(env)}" +
+    "((#{@condition.compile(env)}) ? #{@value_true.compile(env)}" +
       " : #{@value_false.compile(env)})"    
 
 class CaseConditional
@@ -686,7 +691,7 @@ class CaseConditional
   compile: (env) ->
     branches = for arrow_pair, index in @arrow_pairs
        statement = if index == 0 then "if" else "else if"
-       "#{statement} (#{arrow_pair.left.compile(env)} === True) {>>\n" +
+       "#{statement} (#{arrow_pair.left.compile(env)}) {>>\n" +
          "#{arrow_pair.right.compile(env, return: true)}<<\n" +
          "}"
     "(function() {>>\n" + branches.join(" ") + "<<\n" + "}).call()"
