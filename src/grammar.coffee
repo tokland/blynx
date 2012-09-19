@@ -229,8 +229,16 @@ grammar =
   ]
   
   ListComprehension: [
-    o '[ Expression FOR ExpressionMatch IN Expression OptionalComprehensionIf ]',
-        -> new ListComprehension($2, $4, $6, $7) 
+    o '[ Expression ComprehensionForList ]',
+        -> new ListComprehension($2, $3) 
+  ]
+  
+  ComprehensionForList:
+    r 'ComprehensionFor', min: 1
+    
+  ComprehensionFor: [
+    o 'FOR ExpressionMatch IN Expression OptionalComprehensionIf',
+      -> new ComprehensionFor($2, $4, $5)
   ]
   
   OptionalComprehensionIf: [

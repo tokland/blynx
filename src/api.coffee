@@ -23,18 +23,6 @@ range = (cons, nil, start, end, inclusive, step) ->
     (x for x in [start...end] by step)
   _.reduceRight(xs, ((acc_list, x) -> cons(x, acc_list)), nil)
 
-
-list_comprehension = (nil, cons, iterable, expression_callable) ->
-  result = []
-  while iterable != nil
-    x = expression_callable(iterable.head)
-    result.push(x) if x
-    iterable = iterable.tail;
-  result_list = nil
-  for x in [result.length-1..0] by -1
-    result_list = cons(result[_i], result_list)
-  result_list
-  
 runtime_error = (msg) ->
   error("RuntimeError", msg)
     
@@ -105,4 +93,3 @@ exports.match = match
 exports.range = range
 exports.runtime_error = runtime_error
 exports.to_bool = to_bool
-exports.list_comprehension = list_comprehension

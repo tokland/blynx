@@ -604,6 +604,15 @@ tests = [
     xs = [x*y for (x, y) in [(1, 2), (4, 3), (2, 3)] if x < y]
   """, should_have(bindings: {xs: '[Int]'})]
 
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: [a])
+    type Bool = True | False
+    external '*' as (*): (Int, Int) -> Int
+    external '+' as (+): (Int, Int) -> Int
+    external '>' as (>): (Int, Int) -> Bool
+    xs = [x*y for x in [1, 2] if x > 1 for y in [3, 4] if x + y > 2]
+  """, should_have(bindings: {xs: '[Int]'})]
+
   # Arrays
   
 #  ["""

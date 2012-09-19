@@ -101,31 +101,51 @@ list_inner_type = (list_type) ->
   if list_type.name != "List"
     error("TypeError", "Expected list type: #{list_type}")
   list_type.get_types()[0]
-    
-class ListComprehension
-  constructor: (@result_expression, @match, @iterable_expression, @condition) ->
-  _get_match_env: (env) ->
+
+class ComprehensionFor
+  constructor: (@match, @iterable_expression, @condition) ->
+  get_env: (env) ->
     expr_type = @iterable_expression.process(env).type
     @match.process_match(env, list_inner_type(expr_type))
+        
+class ListComprehension
+  constructor: (@result_expression, @for_nodes) ->
   process: (env) ->
-    match_env = @_get_match_env(env) 
+    match_env = _.freduce @for_nodes, env, (acc_env, node) => node.get_env(acc_env)
     inner_type = @result_expression.process(match_env).type
     klass = env.get_type_class("List")
     {env, type: new klass([inner_type])}
   compile: (env) ->
-    match_env = @_get_match_env(env)
-    return_compiled = if @condition
-      "#{@condition.compile(match_env)} ? #{@result_expression.compile(match_env)} : null"
-    else
-      @result_expression.compile(match_env)
+    node_code = (nodes, acc_env, n) =>
+      [node, rest_nodes...] = nodes
+      new_env = node.get_env(acc_env)
+      inner_code = if _(rest_nodes).isEmpty()
+        "_result.push(#{@result_expression.compile(new_env)})"
+      else 
+        node_code(rest_nodes, new_env, n+1)
+      """
+        var __iterable#{n} = _iterable#{n}; 
+        while (__iterable#{n} != Nil) {>>
+          #{compile_match(new_env, node.match, "__iterable#{n}.head")}
+          __iterable#{n} = __iterable#{n}.tail;
+          #{if node.condition then "if (!#{node.condition.compile(new_env)}) continue;" else ""}
+          #{inner_code}<<
+        }
+      """
+    nodes_code = node_code(@for_nodes, env, 1)
+     
     """
-      api.list_comprehension(Nil, Cons, #{@iterable_expression.compile(env)}, function(_head) {>>
-        #{compile_match(match_env, @match, '_head')}
-        return #{return_compiled};<<
-      })
+      (function() {>>
+        var _result = [], _result_list = Nil, _i, _condition, _iterable;
+        #{("var _iterable#{n+1} = #{node.iterable_expression.compile(env)}" \
+          for node, n in @for_nodes).join('\n')};
+        #{nodes_code}
+        for (_i=_result.length-1; _i >= 0; _i--)>>
+          _result_list = Cons(_result[_i], _result_list);<<
+        return _result_list;<<
+      }).call()
     """
       
-
 ## Ranges
 
 # This should support not only ints by all enumerable types
@@ -759,7 +779,7 @@ lib.exportClasses(exports, [
   Symbol, SymbolReplacement,
   FunctionCall, FunctionArgument
   Int, Float, String, Tuple, List, ArrayNode
-  ListComprehension
+  ListComprehension, ComprehensionFor
   ListRange
   Match, MatchPair
   TypeDefinition, TypeConstructorDefinition
