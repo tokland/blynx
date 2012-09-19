@@ -613,6 +613,17 @@ tests = [
     xs = [x*y for x in [1, 2] if x > 1 for y in [3, 4] if x + y > 2]
   """, should_have(bindings: {xs: '[Int]'})]
 
+  # Array-comprehensions
+  
+  ["""
+    type List(a) = Nil | Cons(head: a, tail: [a])
+    type Bool = True | False
+    external '*' as (*): (Int, Int) -> Int
+    external '+' as (+): (Int, Int) -> Int
+    external '>' as (>): (Int, Int) -> Bool
+    xs = A[x*y for x in [1, 2] if x > 1 for y in [3, 4] if x + y > 2]
+  """, should_have(symbols: {xs: [[6, 8], '[Int]']})]
+
   # Arrays
   
 #  ["""

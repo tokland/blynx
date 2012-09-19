@@ -225,19 +225,23 @@ grammar =
     o 'CaseConditional'
     o 'Match'
     o 'ListComprehension'
+    o 'ArrayComprehension'
     o 'ListRange'
+  ]
+
+  ArrayComprehension: [
+    o 'A[ Expression ComprehensionForList ]', -> new ArrayComprehension($2, $3) 
   ]
   
   ListComprehension: [
-    o '[ Expression ComprehensionForList ]',
-        -> new ListComprehension($2, $3) 
+    o '[ Expression ComprehensionForList ]', -> new ListComprehension($2, $3) 
   ]
   
   ComprehensionForList:
     r 'ComprehensionFor', min: 1
     
   ComprehensionFor: [
-    o 'FOR ExpressionMatch IN Expression OptionalComprehensionIf',
+    o 'FOR ExpressionMatch IN Expression OptionalComprehensionIf', 
       -> new ComprehensionFor($2, $4, $5)
   ]
   

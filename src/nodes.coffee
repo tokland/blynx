@@ -108,7 +108,7 @@ class ComprehensionFor
     expr_type = @iterable_expression.process(env).type
     @match.process_match(env, list_inner_type(expr_type))
         
-class ListComprehension
+class Comprehension
   constructor: (@result_expression, @for_nodes) ->
   process: (env) ->
     match_env = _.freduce @for_nodes, env, (acc_env, node) => node.get_env(acc_env)
@@ -133,18 +133,30 @@ class ListComprehension
         }
       """
     nodes_code = node_code(@for_nodes, env, 1)
-     
+    return_code = if @comprehension_kind == "List"
+      """
+        for (_i=_result.length-1; _i >= 0; _i--)>>
+          _result_list = Cons(_result[_i], _result_list);<<
+        return _result_list;
+      """
+    else
+      "return _result;"
+    
     """
       (function() {>>
-        var _result = [], _result_list = Nil, _i, _condition, _iterable;
+        var _result = [], i, _condition, _iterable#{if @comprehension_kind == "List" then " , _result_list = Nil" else ""};
         #{("var _iterable#{n+1} = #{node.iterable_expression.compile(env)}" \
           for node, n in @for_nodes).join('\n')};
         #{nodes_code}
-        for (_i=_result.length-1; _i >= 0; _i--)>>
-          _result_list = Cons(_result[_i], _result_list);<<
-        return _result_list;<<
+        #{return_code}<<
       }).call()
     """
+
+class ListComprehension extends Comprehension
+  comprehension_kind: "List"
+
+class ArrayComprehension extends Comprehension
+  comprehension_kind: "Array"
       
 ## Ranges
 
@@ -779,7 +791,7 @@ lib.exportClasses(exports, [
   Symbol, SymbolReplacement,
   FunctionCall, FunctionArgument
   Int, Float, String, Tuple, List, ArrayNode
-  ListComprehension, ComprehensionFor
+  ListComprehension, ArrayComprehension, ComprehensionFor
   ListRange
   Match, MatchPair
   TypeDefinition, TypeConstructorDefinition
